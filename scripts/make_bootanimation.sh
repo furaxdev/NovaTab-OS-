@@ -50,7 +50,7 @@ done
 
 cat > "$WORKDIR/desc.txt" <<EOF
 $WIDTH $HEIGHT $FPS
-p 1 0 part0
+p 0 0 part0
 EOF
 
 ABS_OUT_ZIP="$(cd "$(dirname "$OUT_ZIP")" && pwd)/$(basename "$OUT_ZIP")"

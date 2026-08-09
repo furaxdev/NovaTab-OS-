@@ -105,12 +105,20 @@ push_bootanimation() {
   confirm "La tablette est-elle prête (root actif, ou dans TWRP avec /system monté) ?"
 
   adb push "$zip" /sdcard/bootanimation.zip
-  if adb shell "su -c 'cp /sdcard/bootanimation.zip /system/media/bootanimation.zip && chmod 644 /system/media/bootanimation.zip'" 2>/dev/null; then
-    log "bootanimation.zip installé via root. Reboot pour voir le résultat."
+  local copy_cmd="mount -o rw,remount /system 2>/dev/null; cp /sdcard/bootanimation.zip /system/media/bootanimation.zip && chmod 644 /system/media/bootanimation.zip"
+
+  # TWRP (et souvent un adb root sur système déjà démarré) donnent un shell déjà root,
+  # sans forcément fournir de binaire 'su' — on tente donc d'abord la copie directe.
+  if adb shell "$copy_cmd" >/dev/null 2>&1 && adb shell "[ -f /system/media/bootanimation.zip ]" >/dev/null 2>&1; then
+    log "bootanimation.zip installé (shell déjà root). Reboot pour voir le résultat."
+  elif adb shell "su -c '$copy_cmd'" >/dev/null 2>&1 && adb shell "[ -f /system/media/bootanimation.zip ]" >/dev/null 2>&1; then
+    log "bootanimation.zip installé via 'su'. Reboot pour voir le résultat."
   else
-    log "Root non détecté via 'su' — copie manuelle nécessaire."
-    log "Depuis TWRP : File Manager > copier /sdcard/bootanimation.zip vers /system/media/bootanimation.zip"
-    log "Ou : adb shell puis 'mount -o rw,remount /system' avant de copier."
+    err "Installation automatique impossible (ni shell root direct, ni 'su' disponible)."
+    log "Copie manuelle nécessaire :"
+    log "  Depuis TWRP : File Manager > copier /sdcard/bootanimation.zip vers /system/media/bootanimation.zip"
+    log "  Ou : adb shell puis 'mount -o rw,remount /system' avant de copier."
+    exit 1
   fi
 }
 
