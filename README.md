@@ -33,11 +33,13 @@ manifests/
   roomservice.xml       # pointe vers les device trees / kernel / vendor communautaires
 scripts/
   build.sh              # repo init + sync + build (à lancer sur une machine avec assez d'espace)
-  flash.sh              # installation via Heimdall (Download Mode) + ADB sideload
+  flash.sh              # installation via Heimdall (Download Mode) + ADB sideload (ROM/GApps/bootanimation)
+  make_bootanimation.sh # génère un bootanimation.zip custom à partir d'images PNG
 .github/workflows/
   build.yml             # workflow CI (nécessite un runner self-hosted, voir commentaires)
 docs/
   DEVICE.md             # infos matérielles, sources utilisées, avertissements
+  CUSTOMIZATION.md       # GApps (variante à choisir) + splash/bootanimation custom
 ```
 
 ## Démarrage rapide
@@ -51,6 +53,20 @@ docs/
 **Important : Samsung n'utilise pas Fastboot.** Le SM-T530 se flashe via le protocole Odin
 (Download Mode), donc `flash.sh` utilise **Heimdall** (l'implémentation libre d'Odin sous
 Linux/Mac) pour le recovery, puis `adb sideload` pour la ROM elle-même. Voir `docs/DEVICE.md`.
+
+## GApps & splash custom
+
+Support pour flasher **GApps** (Google Apps) juste après la ROM, et personnaliser le
+**bootanimation** (écran d'animation au démarrage du système) — voir
+[`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md) pour le détail complet, y compris pourquoi le
+logo de boot bas-niveau (avant le kernel) n'est volontairement pas couvert par ce dépôt
+(risque de brick, format non confirmé pour ce device).
+
+```
+./scripts/flash.sh gapps open_gapps-arm-7.1-pico.zip     # juste après la ROM, dans TWRP
+./scripts/make_bootanimation.sh frames/ bootanimation.zip 1280 800 24
+./scripts/flash.sh bootanimation bootanimation.zip
+```
 
 ## Sauvegarde tes données avant tout flash
 
