@@ -57,3 +57,9 @@ Linux/Mac) pour le recovery, puis `adb sideload` pour la ROM elle-même. Voir `d
 Un flash mal fait peut briquer la tablette (soft-brick récupérable dans la majorité des cas,
 mais reste un risque). Sauvegarde tes données, vérifie que la batterie est chargée à >50%,
 et ne débranche jamais l'appareil pendant un flash.
+
+## Statut du projet
+
+Scaffold initial : manifest + scripts de build/flash + workflow CI documenté. Prochaine étape :
+valider que les device trees communautaires référencés dans `manifests/roomservice.xml`
+sont toujours actifs avant de lancer un premier build réel.
