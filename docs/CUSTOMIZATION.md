@@ -100,6 +100,43 @@ assistant (nom, texte d'accueil, couleurs) sans forker l'app entière.
 - Couleurs d'accent / barre de statut — `overlay/packages/apps/SetupWizard/res/values/colors.xml`
 - Nom affiché dans "À propos de la tablette" et le fingerprint de build — `vendor/frite/vendor.mk`
 
+### Deux façons de l'appliquer
+
+| Méthode | Besoin de compiler ? | Risque |
+|---|---|---|
+| **`scripts/build.sh`** (overlay au build) | Oui, source tree complète (~250 Go, plusieurs heures) | Aucun risque particulier — mécanisme standard AOSP |
+| **`scripts/patch_setupwizard.sh`** (patch d'un APK déjà compilé) | Non — juste `apktool` + un JDK | Resigne l'APK avec une clé différente de la ROM, peut casser des permissions signature-level (voir plus bas) |
+
+Si tu pars d'une **ROM déjà compilée** (téléchargée depuis XDA par ex.) plutôt que de tout
+recompiler toi-même, utilise `patch_setupwizard.sh` :
+
+```
+./scripts/patch_setupwizard.sh extract lineage-14.1-....zip SetupWizard.apk
+./scripts/patch_setupwizard.sh patch SetupWizard.apk SetupWizard-patched.apk
+./scripts/flash.sh setupwizard SetupWizard-patched.apk
+```
+
+Si la ROM est déjà flashée et démarrée une première fois (tu n'as pas eu l'occasion de patcher
+avant), tu peux aussi récupérer l'APK installé directement : `./scripts/patch_setupwizard.sh pull`
+— mais dans ce cas l'assistant ne se relance qu'après un `wipe data` (comportement normal
+d'Android, pas une limite de ce script).
+
+**⚠️ Le risque à connaître avant d'utiliser `patch_setupwizard.sh` :** contrairement à l'overlay
+appliqué au build (qui garde la signature plateforme cohérente sur toute la ROM), ce script
+décompile puis **resigne** l'APK avec une clé de debug générée localement. Si SetupWizard
+partage l'UID système (`android:sharedUserId="android.uid.system"`) ou dépend d'une permission
+strictement liée à la signature, ça peut planter ou perdre des fonctionnalités au premier
+démarrage. C'est une technique de modding courante (apktool + jarsigner) qui marche bien pour
+du texte/couleurs dans la plupart des cas sur Android 7.1, mais **teste d'abord avec une
+sauvegarde TWRP complète**. `flash.sh setupwizard` sauvegarde automatiquement l'APK original
+avant de le remplacer, au cas où il faille revenir en arrière.
+
+**Autre limite à connaître :** beaucoup de zips de ROM modernes utilisent un format
+"block-based" (`system.new.dat.br` + `system.transfer.list`) plutôt que des fichiers à plat —
+dans ce cas, `patch_setupwizard.sh extract` ne peut pas extraire l'APK directement du zip et
+te l'indique clairement avec la marche à suivre manuelle (reconstruire `system.img` via
+`sdat2img`), ou te suggère d'utiliser `pull` à la place.
+
 ### Ce qui n'est PAS couvert (hors scope pour l'instant)
 
 Changer le **déroulé** de l'assistant (sauter l'étape compte Google, ajouter un écran custom,

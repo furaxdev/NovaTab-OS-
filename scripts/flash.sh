@@ -55,6 +55,7 @@ Usage:
   $0 rom <fichier_rom.zip>             Sideload la ROM via ADB (tablette doit être dans TWRP)
   $0 gapps <fichier_gapps.zip>         Sideload un package GApps via ADB (juste après la ROM, dans TWRP)
   $0 bootanimation <fichier.zip>       Pousse un bootanimation.zip custom (système déjà démarré + root, ou via TWRP)
+  $0 setupwizard <apk> [chemin]        Remplace SetupWizard par une version patchée (voir patch_setupwizard.sh), AVANT le 1er boot
   $0 backup                            Sauvegarde /data via adb avant de flasher (recommandé)
 EOF
   exit 1
@@ -139,6 +140,44 @@ push_bootanimation() {
   fi
 }
 
+push_setupwizard() {
+  local apk="$1" remote_path="${2:-/system/priv-app/SetupWizard/SetupWizard.apk}"
+  ensure_cmd adb android-tools-adb
+  [ -f "$apk" ] || { err "Fichier introuvable : $apk"; exit 1; }
+
+  log "Remplace l'APK SetupWizard déjà compilé par une version patchée (branding FriteOS)."
+  log "Voir scripts/patch_setupwizard.sh pour générer ce fichier, et lire l'avertissement en tête de ce script."
+  log "Chemin système ciblé : $remote_path"
+  log ""
+  log "IMPORTANT : ça ne prend effet proprement qu'AVANT le premier démarrage (depuis TWRP,"
+  log "juste après avoir flashé la ROM, avant de wipe data/cache et de booter). Si le système"
+  log "a déjà tourné une fois, l'assistant de configuration ne se relance pas sans un wipe data."
+  confirm "Es-tu dans TWRP, juste après avoir flashé la ROM, avant le premier boot ?"
+
+  local copy_cmd="mount -o rw,remount /system 2>/dev/null; cp /sdcard/SetupWizard-patched.apk '$remote_path' && chmod 644 '$remote_path'"
+  local backup_name="backup-setupwizard-$(date +%Y%m%d-%H%M%S).apk"
+
+  log "Sauvegarde de l'APK original avant remplacement..."
+  if adb pull "$remote_path" "$backup_name" >/dev/null 2>&1; then
+    log "Original sauvegardé dans ./$backup_name (au cas où)."
+  else
+    err "Impossible de sauvegarder l'original (chemin peut-être incorrect : $remote_path)."
+    confirm "Continuer quand même sans sauvegarde ?"
+  fi
+
+  adb push "$apk" /sdcard/SetupWizard-patched.apk
+
+  if adb shell "$copy_cmd" >/dev/null 2>&1 && adb shell "[ -f '$remote_path' ]" >/dev/null 2>&1; then
+    log "SetupWizard patché installé. Pense à wipe data/cache avant de booter si pas déjà fait."
+  elif adb shell "su -c \"$copy_cmd\"" >/dev/null 2>&1 && adb shell "[ -f '$remote_path' ]" >/dev/null 2>&1; then
+    log "SetupWizard patché installé via 'su'. Pense à wipe data/cache avant de booter si pas déjà fait."
+  else
+    err "Installation automatique impossible (ni shell root direct, ni 'su' disponible)."
+    log "Copie manuelle nécessaire depuis TWRP : File Manager > copier /sdcard/SetupWizard-patched.apk vers $remote_path"
+    exit 1
+  fi
+}
+
 backup_data() {
   ensure_cmd adb android-tools-adb
   log "Sauvegarde des données utilisateur (dossier interne) vers ./backup-$(date +%Y%m%d-%H%M%S)/"
@@ -166,6 +205,10 @@ case "$1" in
   bootanimation)
     [ $# -eq 2 ] || usage
     push_bootanimation "$2"
+    ;;
+  setupwizard)
+    [ $# -ge 2 ] || usage
+    push_setupwizard "$2" "${3:-}"
     ;;
   backup)
     backup_data
