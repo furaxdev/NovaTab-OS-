@@ -1,0 +1,51 @@
+name: Patch SetupWizard (branding OOBE, sans compilation)
+
+# Contrairement à build.yml (compilation complète, ~250 Go, besoin d'un runner self-hosted),
+# ce workflow tourne sans problème sur un runner GitHub Actions HÉBERGÉ GRATUIT standard :
+# patcher un seul APK avec apktool ne demande que quelques centaines de Mo et moins d'une
+# minute. C'est le pendant CI du chemin "léger" décrit dans le README (patch_setupwizard.sh).
+#
+# Usage : Actions > Patch SetupWizard > Run workflow, avec l'URL de téléchargement direct
+# du zip de la ROM (le lien direct vers le .zip, pas une page web XDA).
+#
+# Le résultat (SetupWizard-patched.apk) est déposé en artifact du run — télécharge-le puis
+# installe-le avec : ./scripts/flash.sh setupwizard SetupWizard-patched.apk
+
+on:
+  workflow_dispatch:
+    inputs:
+      rom_zip_url:
+        description: "URL de téléchargement direct du zip de la ROM (lien .zip direct, pas une page HTML)"
+        required: true
+        type: string
+
+jobs:
+  patch:
+    name: Patch SetupWizard.apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout du dépôt
+        uses: actions/checkout@v4
+
+      - name: Télécharger le zip de la ROM
+        run: |
+          curl -fL --retry 3 -o rom.zip "${{ inputs.rom_zip_url }}"
+          ls -la rom.zip
+
+      - name: Rendre les scripts exécutables
+        run: chmod +x scripts/patch_setupwizard.sh
+
+      - name: Extraire SetupWizard.apk de la ROM
+        run: ./scripts/patch_setupwizard.sh extract rom.zip SetupWizard.apk
+
+      - name: Patcher le branding FriteOS
+        run: ./scripts/patch_setupwizard.sh patch SetupWizard.apk SetupWizard-patched.apk
+
+      - name: Upload de l'APK patché
+        uses: actions/upload-artifact@v4
+        with:
+          name: SetupWizard-patched
+          path: SetupWizard-patched.apk
+          retention-days: 14
