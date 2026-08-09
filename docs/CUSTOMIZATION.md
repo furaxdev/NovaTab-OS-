@@ -11,7 +11,7 @@ deux).
 Le SM-T530 a **1,5 Go de RAM** : c'est le facteur limitant. Utilise une variante légère de
 [Open GApps](https://opengapps.org) :
 
-| Variante | Recommandé pour milletwifi ? |
+| Variante | Recommandé pour matissewifi ? |
 |---|---|
 | `pico`  | ✅ Oui — juste Play Store + services Google minimaux |
 | `nano`  | ✅ Correct — un peu plus d'apps Google de base |
@@ -79,7 +79,7 @@ et flashé via Heimdall/Odin dans un format binaire propriétaire spécifique au
   un vrai brick (non récupérable) est possible sur ce type d'appareil — contrairement à
   system/recovery qui se re-flashent sans risque.
 
-**Si tu veux quand même tenter :** cherche sur XDA un thread spécifique "millet" ou "SM-T530
+**Si tu veux quand même tenter :** cherche sur XDA un thread spécifique "matisse" ou "SM-T530
 param.bin custom logo" — la communauté a documenté ce genre de mod pour des appareils Exynos
 similaires (S3, Note 2, etc.), mais vérifie bien que la procédure correspond exactement à ta
 révision de bootloader avant de flasher quoi que ce soit sur `param`.
@@ -155,7 +155,7 @@ appliqués automatiquement par `scripts/build.sh` (fonction `apply_branding`) :
 1. Copie `overlay/` et `vendor/frite/vendor.mk` de ce dépôt vers `vendor/frite/` dans la
    source tree synchronisée
 2. Ajoute (si pas déjà présent) `$(call inherit-product, vendor/frite/vendor.mk)` à la fin de
-   `device/samsung/milletwifi/device.mk`
+   `device/samsung/matissewifi/device.mk`
 
 C'est automatique et idempotent — pas d'action manuelle nécessaire pour un build normal.
 Pour désactiver ce branding : `SKIP_BRANDING=1 ./scripts/build.sh`.

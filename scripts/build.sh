@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# build.sh — build FriteOS (LineageOS 14.1) pour la Galaxy Tab 4 10.1" SM-T530 (milletwifi)
+# build.sh — build FriteOS (LineageOS 14.1) pour la Galaxy Tab 4 10.1" SM-T530 (matissewifi)
 #
 # À lancer sur une machine Linux avec :
 #   - >= 250 Go d'espace disque libre
@@ -19,7 +19,7 @@
 
 set -uo pipefail
 
-DEVICE="milletwifi"
+DEVICE="matissewifi"
 BRANCH="cm-14.1"
 BUILD_TYPE="userdebug"
 WORKDIR="${FRITEOS_WORKDIR:-$HOME/friteos-build}"
@@ -90,10 +90,10 @@ sync_sources() {
 }
 
 extract_vendor_blobs() {
-  if [ -d "device/samsung/milletwifi" ] && [ -f "device/samsung/milletwifi/extract-files.sh" ]; then
+  if [ -d "device/samsung/matissewifi" ] && [ -f "device/samsung/matissewifi/extract-files.sh" ]; then
     if [ -z "${SKIP_VENDOR_EXTRACT:-}" ]; then
       echo "Pense à extraire les blobs vendor depuis ta tablette avant de continuer :"
-      echo "  adb pull / puis device/samsung/milletwifi/extract-files.sh"
+      echo "  adb pull / puis device/samsung/matissewifi/extract-files.sh"
       echo "(export SKIP_VENDOR_EXTRACT=1 pour ignorer ce rappel)"
     fi
   fi
@@ -109,11 +109,11 @@ apply_branding() {
   cp -r "$REPO_ROOT/overlay" "vendor/frite/overlay"
   cp "$REPO_ROOT/vendor/frite/vendor.mk" "vendor/frite/vendor.mk"
 
-  local device_mk="device/samsung/milletwifi/device.mk"
+  local device_mk="device/samsung/matissewifi/device.mk"
   local inherit_line='$(call inherit-product, vendor/frite/vendor.mk)'
 
   if [ ! -f "$device_mk" ]; then
-    echo "device.mk introuvable ($device_mk) — le device tree milletwifi a peut-être une structure différente."
+    echo "device.mk introuvable ($device_mk) — le device tree matissewifi a peut-être une structure différente."
     echo "Ajoute manuellement cette ligne dans son device.mk : $inherit_line"
     return
   fi

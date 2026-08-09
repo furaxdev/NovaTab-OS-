@@ -1,4 +1,4 @@
-name: Build FriteOS (milletwifi)
+name: Build FriteOS (matissewifi)
 
 # ATTENTION — LIS AVANT D'ACTIVER CE WORKFLOW
 #
@@ -23,7 +23,7 @@ on:
 
 jobs:
   build:
-    name: Build FriteOS (LineageOS 14.1) for milletwifi
+    name: Build FriteOS (LineageOS 14.1) for matissewifi
     # runs-on: ubuntu-latest   # <-- NE FONCTIONNERA PAS (disque insuffisant), gardé en exemple
     runs-on: [self-hosted, linux, friteos-builder]
     timeout-minutes: 600
@@ -52,6 +52,6 @@ jobs:
       - name: Upload de la ROM générée
         uses: actions/upload-artifact@v4
         with:
-          name: friteos-milletwifi
-          path: ${{ runner.temp }}/friteos-build/out/target/product/milletwifi/lineage-*.zip
+          name: friteos-matissewifi
+          path: ${{ runner.temp }}/friteos-build/out/target/product/matissewifi/lineage-*.zip
           retention-days: 14
