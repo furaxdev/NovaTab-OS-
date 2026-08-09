@@ -31,15 +31,19 @@ branche du manifest (voir `manifests/roomservice.xml`), à tes risques.
 ```
 manifests/
   roomservice.xml       # pointe vers les device trees / kernel / vendor communautaires
+overlay/
+  packages/apps/SetupWizard/...  # branding de l'assistant de premier démarrage (texte, couleurs)
+vendor/novatab/
+  vendor.mk              # branche l'overlay + les propriétés de branding dans le build
 scripts/
-  build.sh              # repo init + sync + build (à lancer sur une machine avec assez d'espace)
-  flash.sh              # installation via Heimdall (Download Mode) + ADB sideload (ROM/GApps/bootanimation)
-  make_bootanimation.sh # génère un bootanimation.zip custom à partir d'images PNG
+  build.sh               # repo init + sync + branding + build (à lancer sur une machine avec assez d'espace)
+  flash.sh               # installation via Heimdall (Download Mode) + ADB sideload (ROM/GApps/bootanimation)
+  make_bootanimation.sh  # génère un bootanimation.zip custom à partir d'images PNG
 .github/workflows/
-  build.yml             # workflow CI (nécessite un runner self-hosted, voir commentaires)
+  build.yml              # workflow CI (nécessite un runner self-hosted, voir commentaires)
 docs/
-  DEVICE.md             # infos matérielles, sources utilisées, avertissements
-  CUSTOMIZATION.md       # GApps (variante à choisir) + splash/bootanimation custom
+  DEVICE.md              # infos matérielles, sources utilisées, avertissements
+  CUSTOMIZATION.md       # GApps, splash/bootanimation custom, branding du premier démarrage (OOBE)
 ```
 
 ## Démarrage rapide
@@ -67,6 +71,14 @@ logo de boot bas-niveau (avant le kernel) n'est volontairement pas couvert par c
 ./scripts/make_bootanimation.sh frames/ bootanimation.zip 1280 800 24
 ./scripts/flash.sh bootanimation bootanimation.zip
 ```
+
+## Branding du premier démarrage (OOBE)
+
+`scripts/build.sh` applique automatiquement un overlay de branding "NovaTab OS" (texte
+d'accueil, couleurs, nom d'appareil) sur l'assistant de configuration LineageOS lors du build —
+voir [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md#config-personnalisée-au-premier-démarrage-oobe--setupwizard)
+pour le détail et comment vérifier/ajuster les noms de ressources après un `repo sync`.
+Désactivable avec `SKIP_BRANDING=1 ./scripts/build.sh`.
 
 ## Sauvegarde tes données avant tout flash
 

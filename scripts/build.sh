@@ -18,6 +18,7 @@ BRANCH="cm-14.1"
 BUILD_TYPE="userdebug"
 WORKDIR="${NOVATAB_WORKDIR:-$HOME/novatab-build}"
 JOBS="${NOVATAB_JOBS:-$(nproc)}"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 log() { echo -e "\033[1;32m[novatab]\033[0m $*"; }
 err() { echo -e "\033[1;31m[novatab]\033[0m $*" >&2; }
@@ -56,7 +57,7 @@ sync_sources() {
   fi
 
   mkdir -p .repo/local_manifests
-  cp "$OLDPWD/manifests/roomservice.xml" .repo/local_manifests/roomservice.xml
+  cp "$REPO_ROOT/manifests/roomservice.xml" .repo/local_manifests/roomservice.xml
 
   log "Sync des sources (ça va prendre du temps, ~50-100 Go)..."
   repo sync -c -j"$JOBS" --force-sync --no-clone-bundle --no-tags
@@ -69,6 +70,38 @@ extract_vendor_blobs() {
       log "  adb pull / puis device/samsung/milletwifi/extract-files.sh"
       log "(export SKIP_VENDOR_EXTRACT=1 pour ignorer ce rappel)"
     fi
+  fi
+}
+
+apply_branding() {
+  if [ -n "${SKIP_BRANDING:-}" ]; then
+    log "SKIP_BRANDING défini, branding NovaTab OS (overlay SetupWizard) non appliqué."
+    return
+  fi
+
+  log "Application du branding NovaTab OS (overlay SetupWizard + vendor.mk)..."
+  mkdir -p "vendor/novatab"
+  cp -r "$REPO_ROOT/overlay" "vendor/novatab/overlay"
+  cp "$REPO_ROOT/vendor/novatab/vendor.mk" "vendor/novatab/vendor.mk"
+
+  local device_mk="device/samsung/milletwifi/device.mk"
+  local inherit_line='$(call inherit-product, vendor/novatab/vendor.mk)'
+
+  if [ ! -f "$device_mk" ]; then
+    err "device.mk introuvable ($device_mk) — le device tree milletwifi a peut-être une structure différente."
+    err "Ajoute manuellement cette ligne dans son device.mk : $inherit_line"
+    return
+  fi
+
+  if grep -qF "$inherit_line" "$device_mk"; then
+    log "vendor/novatab/vendor.mk déjà inclus dans $device_mk."
+  else
+    echo "" >> "$device_mk"
+    echo "# NovaTab OS branding (ajouté par scripts/build.sh)" >> "$device_mk"
+    echo "$inherit_line" >> "$device_mk"
+    log "Ligne d'inclusion ajoutée à $device_mk."
+    log "Si le build échoue à cause de ça, vérifie que ce device.mk existe bien à cet emplacement"
+    log "et que la syntaxe correspond à ce que ce device tree attend (voir docs/CUSTOMIZATION.md)."
   fi
 }
 
@@ -87,6 +120,7 @@ main() {
   install_repo_tool
   sync_sources
   extract_vendor_blobs
+  apply_branding
   build
 
   OUT_DIR="$WORKDIR/out/target/product/$DEVICE"

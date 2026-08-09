@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Couleurs de l'assistant de premier démarrage. Mêmes remarques que strings.xml :
+  vérifie les noms réels dans packages/apps/SetupWizard/res/values/colors.xml après sync.
+-->
+<resources>
+    <color name="setup_accent_color">#FFCB05</color>
+    <color name="setup_status_bar_color">#1A1A1A</color>
+</resources>
