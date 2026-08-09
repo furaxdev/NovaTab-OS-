@@ -37,8 +37,9 @@ vendor/frite/
   vendor.mk              # branche l'overlay + les propriétés de branding dans le build
 scripts/
   build.sh               # repo init + sync + branding + build (à lancer sur une machine avec assez d'espace)
-  flash.sh               # installation via Heimdall (Download Mode) + ADB sideload (ROM/GApps/bootanimation)
+  flash.sh               # installation via Heimdall (Download Mode) + ADB sideload (ROM/GApps/bootanimation/SetupWizard)
   make_bootanimation.sh  # génère un bootanimation.zip custom à partir d'images PNG
+  patch_setupwizard.sh   # alternative légère à build.sh : patche le branding OOBE sur une ROM déjà compilée
 .github/workflows/
   build.yml              # workflow CI (nécessite un runner self-hosted, voir commentaires)
 docs/
@@ -80,11 +81,16 @@ logo de boot bas-niveau (avant le kernel) n'est volontairement pas couvert par c
 
 ## Branding du premier démarrage (OOBE)
 
-`scripts/build.sh` applique automatiquement un overlay de branding "FriteOS" (texte
-d'accueil, couleurs, nom d'appareil) sur l'assistant de configuration LineageOS lors du build —
-voir [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md#config-personnalisée-au-premier-démarrage-oobe--setupwizard)
-pour le détail et comment vérifier/ajuster les noms de ressources après un `repo sync`.
-Désactivable avec `SKIP_BRANDING=1 ./scripts/build.sh`.
+Deux façons d'appliquer le branding "FriteOS" à l'assistant de configuration LineageOS :
+
+- **En compilant depuis les sources** (`scripts/build.sh`) : overlay appliqué automatiquement
+  au build, désactivable avec `SKIP_BRANDING=1 ./scripts/build.sh`
+- **Sur une ROM déjà compilée** (téléchargée, sans recompiler) : `scripts/patch_setupwizard.sh`
+  décompile/patche/resigne juste l'APK SetupWizard avec `apktool` — pas besoin des 250 Go, mais
+  vraie contrepartie (resignature, risque sur les permissions signature-level)
+
+Voir [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md#config-personnalisée-au-premier-démarrage-oobe--setupwizard)
+pour le détail complet des deux méthodes et leurs limites.
 
 ## Sauvegarde tes données avant tout flash
 
