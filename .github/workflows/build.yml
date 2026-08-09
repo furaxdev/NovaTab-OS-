@@ -1,0 +1,57 @@
+name: Build NovaTab OS (milletwifi)
+
+# ATTENTION — LIS AVANT D'ACTIVER CE WORKFLOW
+#
+# Un build LineageOS complet nécessite ~150-250 Go d'espace disque et plusieurs heures
+# de compilation. Les runners GitHub Actions HÉBERGÉS gratuits (ubuntu-latest) n'ont que
+# ~14 Go de disque et un timeout de 6h : ce workflow échouera dessus (ENOSPC quasi garanti
+# pendant le `repo sync`).
+#
+# Options réalistes :
+#   1. (Recommandé) Utiliser un runner self-hosted avec assez de disque/RAM :
+#      https://docs.github.com/actions/hosting-your-own-runners
+#      -> décommente `runs-on: [self-hosted, linux, novatab-builder]` ci-dessous.
+#   2. Louer un runner hébergé "large" avec disque étendu (offres payantes GitHub/tiers).
+#   3. Ne pas utiliser CI du tout et lancer scripts/build.sh directement sur ta machine.
+#
+# Ce workflow est fourni tel quel comme point de départ, désactivé par défaut
+# (déclenchement manuel uniquement) pour éviter de gaspiller des minutes CI sur un build
+# voué à échouer sur un runner standard.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    name: Build LineageOS 14.1 for milletwifi
+    # runs-on: ubuntu-latest   # <-- NE FONCTIONNERA PAS (disque insuffisant), gardé en exemple
+    runs-on: [self-hosted, linux, novatab-builder]
+    timeout-minutes: 600
+
+    steps:
+      - name: Checkout du manifest
+        uses: actions/checkout@v4
+
+      - name: Vérifier l'espace disque disponible
+        run: |
+          echo "Espace disque disponible :"
+          df -h
+          avail_gb=$(df --output=avail -BG . | tail -1 | tr -dc '0-9')
+          if [ "$avail_gb" -lt 200 ]; then
+            echo "::error::Moins de 200 Go disponibles ($avail_gb Go) — ce runner ne peut pas builder LineageOS. Utilise un self-hosted runner dédié."
+            exit 1
+          fi
+
+      - name: Lancer le build
+        run: |
+          chmod +x scripts/build.sh
+          ./scripts/build.sh
+        env:
+          NOVATAB_WORKDIR: ${{ runner.temp }}/novatab-build
+
+      - name: Upload de la ROM générée
+        uses: actions/upload-artifact@v4
+        with:
+          name: novatab-os-milletwifi
+          path: ${{ runner.temp }}/novatab-build/out/target/product/milletwifi/lineage-*.zip
+          retention-days: 14
