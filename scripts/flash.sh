@@ -10,8 +10,17 @@
 # Usage :
 #   ./flash.sh recovery /chemin/vers/twrp-milletwifi.img.tar   # flash TWRP via Heimdall
 #   ./flash.sh rom /chemin/vers/lineage-14.1-....zip           # sideload la ROM via ADB
+#   ./flash.sh gapps /chemin/vers/open_gapps-arm-7.1-pico.zip  # sideload GApps via ADB
+#   ./flash.sh bootanimation /chemin/vers/bootanimation.zip    # pousse un boot animation custom
 #
 # Prérequis : heimdall (paquet 'heimdall-flash' sous Debian/Ubuntu) et adb installés.
+#
+# Ordre recommandé pour une install complète avec GApps + splash custom :
+#   1. ./flash.sh recovery twrp-milletwifi.img
+#   2. (reboot en recovery)
+#   3. ./flash.sh rom lineage-14.1-....zip
+#   4. ./flash.sh gapps open_gapps-arm-7.1-pico.zip   (sans reboot entre les deux, toujours dans TWRP)
+#   5. reboot système, puis ./flash.sh bootanimation bootanimation.zip (voir docs/CUSTOMIZATION.md)
 
 set -euo pipefail
 
@@ -25,9 +34,11 @@ require_cmd() {
 usage() {
   cat <<EOF
 Usage:
-  $0 recovery <fichier_twrp.img>   Flash TWRP en mode Download (via Heimdall)
-  $0 rom <fichier_rom.zip>         Sideload la ROM via ADB (tablette doit être dans TWRP)
-  $0 backup                        Sauvegarde /data via adb avant de flasher (recommandé)
+  $0 recovery <fichier_twrp.img>       Flash TWRP en mode Download (via Heimdall)
+  $0 rom <fichier_rom.zip>             Sideload la ROM via ADB (tablette doit être dans TWRP)
+  $0 gapps <fichier_gapps.zip>         Sideload un package GApps via ADB (juste après la ROM, dans TWRP)
+  $0 bootanimation <fichier.zip>       Pousse un bootanimation.zip custom (système déjà démarré + root, ou via TWRP)
+  $0 backup                            Sauvegarde /data via adb avant de flasher (recommandé)
 EOF
   exit 1
 }
@@ -66,6 +77,51 @@ sideload_rom() {
   log "Sideload terminé. Reboote la tablette depuis le menu TWRP."
 }
 
+sideload_gapps() {
+  local zip="$1"
+  require_cmd adb
+  [ -f "$zip" ] || { err "Fichier introuvable : $zip"; exit 1; }
+
+  log "GApps doit être flashé JUSTE APRÈS la ROM, sans reboot entre les deux, toujours dans TWRP."
+  log "Vu la RAM limitée du SM-T530 (1,5 Go), privilégie une variante 'pico' ou 'nano' de GApps"
+  log "(ex: open_gapps-arm-7.1-pico.zip) — les variantes 'stock'/'super' saturent la RAM."
+  confirm "Es-tu bien dans TWRP juste après avoir flashé la ROM (Advanced > ADB Sideload) ?"
+
+  log "Sideload de GApps ($zip)..."
+  adb sideload "$zip"
+
+  log "GApps installé. Tu peux maintenant reboot le système."
+}
+
+push_bootanimation() {
+  local zip="$1"
+  require_cmd adb
+  [ -f "$zip" ] || { err "Fichier introuvable : $zip"; exit 1; }
+
+  log "Deux méthodes possibles :"
+  log "  a) Système déjà démarré + accès root (adb root / su) :"
+  log "     adb push $zip /system/media/bootanimation.zip"
+  log "  b) Depuis TWRP (système monté, avant premier boot) : même commande, TWRP a déjà les droits."
+  confirm "La tablette est-elle prête (root actif, ou dans TWRP avec /system monté) ?"
+
+  adb push "$zip" /sdcard/bootanimation.zip
+  local copy_cmd="mount -o rw,remount /system 2>/dev/null; cp /sdcard/bootanimation.zip /system/media/bootanimation.zip && chmod 644 /system/media/bootanimation.zip"
+
+  # TWRP (et souvent un adb root sur système déjà démarré) donnent un shell déjà root,
+  # sans forcément fournir de binaire 'su' — on tente donc d'abord la copie directe.
+  if adb shell "$copy_cmd" >/dev/null 2>&1 && adb shell "[ -f /system/media/bootanimation.zip ]" >/dev/null 2>&1; then
+    log "bootanimation.zip installé (shell déjà root). Reboot pour voir le résultat."
+  elif adb shell "su -c '$copy_cmd'" >/dev/null 2>&1 && adb shell "[ -f /system/media/bootanimation.zip ]" >/dev/null 2>&1; then
+    log "bootanimation.zip installé via 'su'. Reboot pour voir le résultat."
+  else
+    err "Installation automatique impossible (ni shell root direct, ni 'su' disponible)."
+    log "Copie manuelle nécessaire :"
+    log "  Depuis TWRP : File Manager > copier /sdcard/bootanimation.zip vers /system/media/bootanimation.zip"
+    log "  Ou : adb shell puis 'mount -o rw,remount /system' avant de copier."
+    exit 1
+  fi
+}
+
 backup_data() {
   require_cmd adb
   log "Sauvegarde des données utilisateur (dossier interne) vers ./backup-$(date +%Y%m%d-%H%M%S)/"
@@ -85,6 +141,14 @@ case "$1" in
   rom)
     [ $# -eq 2 ] || usage
     sideload_rom "$2"
+    ;;
+  gapps)
+    [ $# -eq 2 ] || usage
+    sideload_gapps "$2"
+    ;;
+  bootanimation)
+    [ $# -eq 2 ] || usage
+    push_bootanimation "$2"
     ;;
   backup)
     backup_data
