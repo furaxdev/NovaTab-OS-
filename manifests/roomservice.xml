@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  roomservice.xml pour le SM-T530 (milletwifi).
+
+  À placer dans .repo/local_manifests/roomservice.xml de ta source tree LineageOS 14.1
+  (scripts/build.sh le fait automatiquement).
+
+  IMPORTANT : les URLs ci-dessous pointent vers les forks communautaires connus au moment
+  de la rédaction de ce manifest. Le support de ce device étant ancien et non-officiel,
+  vérifie qu'ils existent toujours avant de lancer le sync (voir docs/DEVICE.md). Si un
+  dépôt est introuvable, remplace son <project> par le fork actif que tu auras trouvé.
+-->
+<manifest>
+  <project name="LineageOS/android_device_samsung_milletwifi"
+           path="device/samsung/milletwifi"
+           remote="github"
+           revision="cm-14.1" />
+
+  <project name="LineageOS/android_device_samsung_millet-common"
+           path="device/samsung/millet-common"
+           remote="github"
+           revision="cm-14.1" />
+
+  <project name="LineageOS/android_kernel_samsung_smdk3470"
+           path="kernel/samsung/smdk3470"
+           remote="github"
+           revision="cm-14.1" />
+
+  <!--
+    Les blobs vendor propriétaires (Wi-Fi, GPS, GPU) ne doivent PAS être récupérés depuis un
+    dépôt tiers par défaut : extrais-les toi-même depuis ta tablette avec
+    device/samsung/milletwifi/extract-files.sh une fois le device tree en place, ou utilise
+    ton propre dépôt vendor si tu en as un.
+  -->
+  <!--
+  <project name="TON_COMPTE/proprietary_vendor_samsung_milletwifi"
+           path="vendor/samsung/milletwifi"
+           remote="github"
+           revision="cm-14.1" />
+  -->
+</manifest>
