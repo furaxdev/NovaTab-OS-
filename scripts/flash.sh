@@ -8,7 +8,7 @@
 # le recovery, puis `adb sideload` pour flasher la ROM elle-même une fois dans le recovery.
 #
 # Usage :
-#   ./flash.sh recovery /chemin/vers/twrp-milletwifi.img.tar   # flash TWRP via Heimdall
+#   ./flash.sh recovery /chemin/vers/twrp-matissewifi.img.tar   # flash TWRP via Heimdall
 #   ./flash.sh rom /chemin/vers/lineage-14.1-....zip           # sideload la ROM via ADB
 #   ./flash.sh gapps /chemin/vers/open_gapps-arm-7.1-pico.zip  # sideload GApps via ADB
 #   ./flash.sh bootanimation /chemin/vers/bootanimation.zip    # pousse un boot animation custom
@@ -17,7 +17,7 @@
 # via apt (paquets 'heimdall-flash' et 'android-tools-adb' sous Debian/Ubuntu).
 #
 # Ordre recommandé pour une install complète avec GApps + splash custom :
-#   1. ./flash.sh recovery twrp-milletwifi.img
+#   1. ./flash.sh recovery twrp-matissewifi.img
 #   2. (reboot en recovery)
 #   3. ./flash.sh rom lineage-14.1-....zip
 #   4. ./flash.sh gapps open_gapps-arm-7.1-pico.zip   (sans reboot entre les deux, toujours dans TWRP)

@@ -1,6 +1,6 @@
 # FriteOS
 
-ROM custom type LineageOS pour la **Samsung Galaxy Tab 4 10.1" SM-T530** (WiFi, codename `milletwifi`).
+ROM custom type LineageOS pour la **Samsung Galaxy Tab 4 10.1" SM-T530** (WiFi, codename `matissewifi`).
 
 ## ⚠️ Lis ça avant de commencer
 
@@ -15,23 +15,23 @@ la section "Avancé").
 Le SM-T530 embarque un Exynos 3220 (quad-core Cortex-A7) et **1,5 Go de RAM**. C'est la
 config exacte du Galaxy Tab 4 le plus limité côté support communautaire :
 
-| Version cible          | Statut réaliste sur milletwifi                          |
+| Version cible          | Statut réaliste sur matissewifi                          |
 |-------------------------|-----------------------------------------------------------|
 | **LineageOS 14.1 (Android 7.1.2)** | ✅ Recommandé — device tree communautaire mature, builds non-officielles stables (XDA) |
 | LineageOS 15.1 (Android 8.1)       | ⚠️ Support partiel/instable selon les forks, peu maintenu |
 | LineageOS 17.1 (Android 10)        | ❌ Pas de build fonctionnelle connue pour ce SoC/cette RAM — déconseillé |
 
-Cherche donc une build **LineageOS 14.1 non-officielle pour "milletwifi" / "SM-T530"** sur
+Cherche donc une build **LineageOS 14.1 non-officielle pour "matissewifi" / "SM-T530"** sur
 XDA-Developers — c'est la cible que tout ce dépôt suppose.
 
 ## Démarrage rapide — sans rien compiler (recommandé)
 
 Aucune des étapes ci-dessous n'a besoin des 250 Go ni de machine dédiée : tu pars d'une ROM
-et d'un recovery TWRP déjà compilés par la communauté (à chercher sur XDA pour "milletwifi").
+et d'un recovery TWRP déjà compilés par la communauté (à chercher sur XDA pour "matissewifi").
 
 ```
 # 1. Flash TWRP (Download Mode : Volume bas + Home + Power, puis Volume haut pour confirmer)
-./scripts/flash.sh recovery twrp-milletwifi.img
+./scripts/flash.sh recovery twrp-matissewifi.img
 
 # 2. Reboot en recovery (Volume haut + Home + Power), puis :
 
@@ -83,7 +83,7 @@ le branding — c'est juste plus lourd).
    applique le branding, lance le build. Affiche une barre de progression (whiptail) plutôt que
    de spammer le terminal — toute la sortie verbeuse va dans `~/friteos-build/logs/build-*.log`.
    Désactivable avec `FRITEOS_NO_TUI=1 ./scripts/build.sh`.
-3. Récupère le zip dans `out/target/product/milletwifi/lineage-*.zip`, puis reprends la séquence
+3. Récupère le zip dans `out/target/product/matissewifi/lineage-*.zip`, puis reprends la séquence
    `flash.sh` ci-dessus à partir de l'étape 4.
 
 Ça ne tourne **pas** sur les runners GitHub Actions hébergés gratuits (14 Go de disque max) —
@@ -115,4 +115,4 @@ docs/
 ## Statut du projet
 
 Scaffold initial : scripts de flash/patch/build documentés. Prochaine étape : valider le tout
-sur une tablette réelle avec une build LineageOS 14.1 milletwifi trouvée sur XDA.
+sur une tablette réelle avec une build LineageOS 14.1 matissewifi trouvée sur XDA.

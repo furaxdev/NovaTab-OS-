@@ -1,4 +1,4 @@
-# Samsung Galaxy Tab 4 10.1" — SM-T530 (milletwifi)
+# Samsung Galaxy Tab 4 10.1" — SM-T530 (matissewifi)
 
 Infos relevées depuis la capture "À propos de l'appareil" fournie par l'utilisateur :
 
@@ -9,9 +9,17 @@ Infos relevées depuis la capture "À propos de l'appareil" fournie par l'utilis
 
 ## Codename
 
-`milletwifi` — c'est le nom utilisé par les device trees communautaires LineageOS/AOSP
-pour le SM-T530 (variante WiFi-only de la famille "millet", qui inclut aussi T531/T535
+`matissewifi` — c'est le nom utilisé par les device trees communautaires LineageOS/AOSP
+pour le SM-T530 (variante WiFi-only de la famille **"matisse"**, qui inclut aussi T531/T535
 pour les versions 3G/LTE).
+
+⚠️ **Ne pas confondre avec `milletwifi`** — c'est le codename d'un appareil différent, la
+**Galaxy Tab 4 8.0" (SM-T330)**, plus petite. Les deux familles ("matisse" = 10.1", "millet" =
+8.0") partagent parfois un thread XDA combiné ("[matisse][millet]") ce qui prête à confusion,
+mais ont des device trees, kernels et partitions différents — ne jamais mélanger les deux.
+
+Thread XDA de référence pour ce modèle précis (SM-T530/531/535, LineageOS 14.1) :
+https://xdaforums.com/t/rom-unofficial-7-1-1-lineageos-14-1-galaxy-tab-4-10-1-sm-t530-531-535.2963906/
 
 ## Caractéristiques matérielles
 
@@ -32,9 +40,10 @@ Le fichier `manifests/roomservice.xml` référence les dépôts communautaires s
 (à vérifier/adapter selon disponibilité au moment du build — les device trees non-officiels
 peuvent bouger ou être archivés) :
 
-- Device tree : `device_samsung_milletwifi` (fork communautaire LineageOS 14.1)
-- Kernel : `kernel_samsung_smdk3470` ou équivalent kernel commun "millet"
-- Vendor (blobs propriétaires) : `vendor_samsung_milletwifi` — extrait avec `extract-files.sh`
+- Device tree : `device_samsung_matissewifi` (fork communautaire LineageOS 14.1, org GitHub `matissewifi`)
+- Common : `device_samsung_matisse-common`
+- Kernel : `kernel_samsung_smdk3470`
+- Vendor (blobs propriétaires) : `vendor_samsung_matissewifi` — extrait avec `extract-files.sh`
   **depuis un dump de ta propre tablette**, jamais depuis un dépôt tiers pour les blobs Wi-Fi/GPS
   propriétaires (question de licence Samsung).
 
