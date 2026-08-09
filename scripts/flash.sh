@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# flash.sh — installe un recovery custom (TWRP) puis sideload la ROM NovaTab OS
+# flash.sh — installe un recovery custom (TWRP) puis sideload la ROM FriteOS
 # sur la Galaxy Tab 4 10.1" SM-T530.
 #
 # ATTENTION : les appareils Samsung n'utilisent PAS Fastboot mais le protocole Odin
@@ -13,7 +13,8 @@
 #   ./flash.sh gapps /chemin/vers/open_gapps-arm-7.1-pico.zip  # sideload GApps via ADB
 #   ./flash.sh bootanimation /chemin/vers/bootanimation.zip    # pousse un boot animation custom
 #
-# Prérequis : heimdall (paquet 'heimdall-flash' sous Debian/Ubuntu) et adb installés.
+# Prérequis : heimdall et adb. S'ils sont absents, ce script les installe automatiquement
+# via apt (paquets 'heimdall-flash' et 'android-tools-adb' sous Debian/Ubuntu).
 #
 # Ordre recommandé pour une install complète avec GApps + splash custom :
 #   1. ./flash.sh recovery twrp-milletwifi.img
@@ -24,11 +25,27 @@
 
 set -euo pipefail
 
-log() { echo -e "\033[1;32m[novatab-flash]\033[0m $*"; }
-err() { echo -e "\033[1;31m[novatab-flash]\033[0m $*" >&2; }
+log() { echo -e "\033[1;32m[friteos-flash]\033[0m $*"; }
+err() { echo -e "\033[1;31m[friteos-flash]\033[0m $*" >&2; }
 
-require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || { err "Commande manquante : $1 (installe-la avant de continuer)"; exit 1; }
+# ensure_cmd <commande> <paquet_apt>
+# Installe automatiquement via apt si la commande n'est pas déjà présente.
+ensure_cmd() {
+  local cmd="$1" pkg="${2:-$1}"
+  command -v "$cmd" >/dev/null 2>&1 && return 0
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    err "Commande manquante : $cmd, et apt-get n'est pas disponible pour l'installer automatiquement."
+    exit 1
+  fi
+
+  log "Commande manquante : $cmd — installation via apt (paquet '$pkg')..."
+  if ! sudo apt-get update -qq || ! sudo apt-get install -y "$pkg"; then
+    err "Échec de l'installation de '$pkg'. Installe-le manuellement puis relance."
+    exit 1
+  fi
+
+  command -v "$cmd" >/dev/null 2>&1 || { err "'$cmd' toujours introuvable après l'installation de '$pkg'."; exit 1; }
 }
 
 usage() {
@@ -50,7 +67,7 @@ confirm() {
 
 flash_recovery() {
   local img="$1"
-  require_cmd heimdall
+  ensure_cmd heimdall heimdall-flash
   [ -f "$img" ] || { err "Fichier introuvable : $img"; exit 1; }
 
   log "Assure-toi que la tablette est en Download Mode :"
@@ -65,7 +82,7 @@ flash_recovery() {
 
 sideload_rom() {
   local zip="$1"
-  require_cmd adb
+  ensure_cmd adb android-tools-adb
   [ -f "$zip" ] || { err "Fichier introuvable : $zip"; exit 1; }
 
   log "Assure-toi que la tablette est démarrée dans TWRP, menu 'Advanced > ADB Sideload'."
@@ -79,7 +96,7 @@ sideload_rom() {
 
 sideload_gapps() {
   local zip="$1"
-  require_cmd adb
+  ensure_cmd adb android-tools-adb
   [ -f "$zip" ] || { err "Fichier introuvable : $zip"; exit 1; }
 
   log "GApps doit être flashé JUSTE APRÈS la ROM, sans reboot entre les deux, toujours dans TWRP."
@@ -95,7 +112,7 @@ sideload_gapps() {
 
 push_bootanimation() {
   local zip="$1"
-  require_cmd adb
+  ensure_cmd adb android-tools-adb
   [ -f "$zip" ] || { err "Fichier introuvable : $zip"; exit 1; }
 
   log "Deux méthodes possibles :"
@@ -123,7 +140,7 @@ push_bootanimation() {
 }
 
 backup_data() {
-  require_cmd adb
+  ensure_cmd adb android-tools-adb
   log "Sauvegarde des données utilisateur (dossier interne) vers ./backup-$(date +%Y%m%d-%H%M%S)/"
   local dest="backup-$(date +%Y%m%d-%H%M%S)"
   mkdir -p "$dest"

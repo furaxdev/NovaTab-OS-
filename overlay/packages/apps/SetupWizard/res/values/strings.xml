@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Overlay de branding pour l'app SetupWizard (assistant de premier démarrage) de LineageOS.
+
+  Noms de ressources utilisés par le SetupWizard de cm-14.1 :
+  - setup_welcome : texte affiché sur l'écran d'accueil
+  - os_name : nom substitué dans les templates de texte (ex: "Bienvenue sur %1$s")
+
+  ⚠️ Un overlay qui référence une ressource inexistante est simplement ignoré par le build
+  (pas d'erreur bloquante). Après ton premier `repo sync` (voir scripts/build.sh), vérifie que
+  ces noms correspondent toujours à la réalité dans :
+    <WORKDIR>/packages/apps/SetupWizard/res/values/strings.xml
+  et ajuste ce fichier si besoin — c'est la première chose à checker si le texte custom
+  n'apparaît pas après un flash.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="setup_welcome">Bienvenue sur FriteOS</string>
+    <string name="os_name">FriteOS</string>
+</resources>

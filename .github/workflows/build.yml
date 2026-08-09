@@ -1,4 +1,4 @@
-name: Build NovaTab OS (milletwifi)
+name: Build FriteOS (milletwifi)
 
 # ATTENTION — LIS AVANT D'ACTIVER CE WORKFLOW
 #
@@ -10,7 +10,7 @@ name: Build NovaTab OS (milletwifi)
 # Options réalistes :
 #   1. (Recommandé) Utiliser un runner self-hosted avec assez de disque/RAM :
 #      https://docs.github.com/actions/hosting-your-own-runners
-#      -> décommente `runs-on: [self-hosted, linux, novatab-builder]` ci-dessous.
+#      -> décommente `runs-on: [self-hosted, linux, friteos-builder]` ci-dessous.
 #   2. Louer un runner hébergé "large" avec disque étendu (offres payantes GitHub/tiers).
 #   3. Ne pas utiliser CI du tout et lancer scripts/build.sh directement sur ta machine.
 #
@@ -23,9 +23,9 @@ on:
 
 jobs:
   build:
-    name: Build LineageOS 14.1 for milletwifi
+    name: Build FriteOS (LineageOS 14.1) for milletwifi
     # runs-on: ubuntu-latest   # <-- NE FONCTIONNERA PAS (disque insuffisant), gardé en exemple
-    runs-on: [self-hosted, linux, novatab-builder]
+    runs-on: [self-hosted, linux, friteos-builder]
     timeout-minutes: 600
 
     steps:
@@ -47,11 +47,11 @@ jobs:
           chmod +x scripts/build.sh
           ./scripts/build.sh
         env:
-          NOVATAB_WORKDIR: ${{ runner.temp }}/novatab-build
+          FRITEOS_WORKDIR: ${{ runner.temp }}/friteos-build
 
       - name: Upload de la ROM générée
         uses: actions/upload-artifact@v4
         with:
-          name: novatab-os-milletwifi
-          path: ${{ runner.temp }}/novatab-build/out/target/product/milletwifi/lineage-*.zip
+          name: friteos-milletwifi
+          path: ${{ runner.temp }}/friteos-build/out/target/product/milletwifi/lineage-*.zip
           retention-days: 14
