@@ -2,7 +2,7 @@
 #
 # make_bootanimation.sh — génère un bootanimation.zip Android à partir d'images PNG,
 # pour personnaliser l'écran de démarrage (après le splash bas-niveau du kernel, pendant
-# le boot du système) de NovaTab OS.
+# le boot du système) de FriteOS.
 #
 # Ça ne remplace PAS le logo de boot bas-niveau (celui affiché avant même le kernel) —
 # voir docs/CUSTOMIZATION.md pour la différence entre les deux et les limites sur le SM-T530.
@@ -18,8 +18,29 @@
 
 set -euo pipefail
 
-log() { echo -e "\033[1;32m[novatab-bootanim]\033[0m $*"; }
-err() { echo -e "\033[1;31m[novatab-bootanim]\033[0m $*" >&2; }
+log() { echo -e "\033[1;32m[friteos-bootanim]\033[0m $*"; }
+err() { echo -e "\033[1;31m[friteos-bootanim]\033[0m $*" >&2; }
+
+# ensure_cmd <commande> <paquet_apt>
+ensure_cmd() {
+  local cmd="$1" pkg="${2:-$1}"
+  command -v "$cmd" >/dev/null 2>&1 && return 0
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    err "Commande manquante : $cmd, et apt-get n'est pas disponible pour l'installer automatiquement."
+    exit 1
+  fi
+
+  log "Commande manquante : $cmd — installation via apt (paquet '$pkg')..."
+  if ! sudo apt-get update -qq || ! sudo apt-get install -y "$pkg"; then
+    err "Échec de l'installation de '$pkg'. Installe-le manuellement puis relance."
+    exit 1
+  fi
+
+  command -v "$cmd" >/dev/null 2>&1 || { err "'$cmd' toujours introuvable après l'installation de '$pkg'."; exit 1; }
+}
+
+ensure_cmd zip
 
 FRAMES_DIR="${1:?Usage: $0 <dossier_frames_png> <sortie.zip> [largeur] [hauteur] [fps]}"
 OUT_ZIP="${2:?Usage: $0 <dossier_frames_png> <sortie.zip> [largeur] [hauteur] [fps]}"

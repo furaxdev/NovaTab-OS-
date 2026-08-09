@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Couleurs de l'assistant de premier démarrage. Mêmes remarques que strings.xml :
-  vérifie les noms réels dans packages/apps/SetupWizard/res/values/colors.xml après sync.
+  Couleurs de l'assistant de premier démarrage. `accent` et `primary_dark` sont les noms
+  utilisés par le SetupWizard de cm-14.1. Mêmes remarques que strings.xml : vérifie qu'ils
+  correspondent toujours dans packages/apps/SetupWizard/res/values/colors.xml après sync.
 -->
 <resources>
-    <color name="setup_accent_color">#FFCB05</color>
-    <color name="setup_status_bar_color">#1A1A1A</color>
+    <color name="accent">#FFCB05</color>
+    <color name="primary_dark">#1A1A1A</color>
 </resources>

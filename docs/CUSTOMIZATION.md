@@ -96,9 +96,9 @@ assistant (nom, texte d'accueil, couleurs) sans forker l'app entière.
 
 ### Ce qui est couvert
 
-- Texte d'accueil ("Bienvenue sur NovaTab OS") — `overlay/packages/apps/SetupWizard/res/values/strings.xml`
+- Texte d'accueil ("Bienvenue sur FriteOS") — `overlay/packages/apps/SetupWizard/res/values/strings.xml`
 - Couleurs d'accent / barre de statut — `overlay/packages/apps/SetupWizard/res/values/colors.xml`
-- Nom affiché dans "À propos de la tablette" et le fingerprint de build — `vendor/novatab/vendor.mk`
+- Nom affiché dans "À propos de la tablette" et le fingerprint de build — `vendor/frite/vendor.mk`
 
 ### Ce qui n'est PAS couvert (hors scope pour l'instant)
 
@@ -115,9 +115,9 @@ Ce dépôt utilise le mécanisme d'overlay de ressources standard d'AOSP/Lineage
 (texte, couleurs) d'une app déjà compilée dans le ROM, **sans toucher à son code**. Ils sont
 appliqués automatiquement par `scripts/build.sh` (fonction `apply_branding`) :
 
-1. Copie `overlay/` et `vendor/novatab/vendor.mk` de ce dépôt vers `vendor/novatab/` dans la
+1. Copie `overlay/` et `vendor/frite/vendor.mk` de ce dépôt vers `vendor/frite/` dans la
    source tree synchronisée
-2. Ajoute (si pas déjà présent) `$(call inherit-product, vendor/novatab/vendor.mk)` à la fin de
+2. Ajoute (si pas déjà présent) `$(call inherit-product, vendor/frite/vendor.mk)` à la fin de
    `device/samsung/milletwifi/device.mk`
 
 C'est automatique et idempotent — pas d'action manuelle nécessaire pour un build normal.
@@ -125,18 +125,19 @@ Pour désactiver ce branding : `SKIP_BRANDING=1 ./scripts/build.sh`.
 
 ### ⚠️ Vérifie les noms de ressources après le premier sync
 
-Les noms de ressources utilisés dans `overlay/` (`setup_welcome_message`, etc.) correspondent
-à ceux de SetupWizard sur la branche `cm-14.1` au moment de la rédaction. **Ils peuvent avoir
-changé** selon la révision exacte synchronisée. Un overlay qui référence une ressource
-inexistante est simplement ignorée (pas d'erreur de build), donc si ton texte n'apparaît pas
+Les noms de ressources utilisés dans `overlay/` (`setup_welcome`, `os_name`, `accent`,
+`primary_dark`) correspondent à ceux du SetupWizard sur la branche `cm-14.1`. **Ils peuvent
+avoir changé** selon la révision exacte synchronisée. Un overlay qui référence une ressource
+inexistante est simplement ignoré (pas d'erreur de build), donc si ton texte n'apparaît pas
 après un flash, la première chose à vérifier est :
 
 ```
-grep -r "setup_welcome_message" <WORKDIR>/packages/apps/SetupWizard/res/values/strings.xml
+grep -rn "setup_welcome\|os_name" <WORKDIR>/packages/apps/SetupWizard/res/values/strings.xml
+grep -rn "\"accent\"\|\"primary_dark\"" <WORKDIR>/packages/apps/SetupWizard/res/values/colors.xml
 ```
 
-et à ajuster `overlay/packages/apps/SetupWizard/res/values/strings.xml` en conséquence si le
-nom a changé.
+et à ajuster `overlay/packages/apps/SetupWizard/res/values/{strings,colors}.xml` en
+conséquence si les noms ont changé.
 
 ### Ajouter un logo custom dans l'assistant
 

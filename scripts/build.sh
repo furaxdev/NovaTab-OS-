@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# build.sh — build NovaTab OS (LineageOS 14.1) pour la Galaxy Tab 4 10.1" SM-T530 (milletwifi)
+# build.sh — build FriteOS (LineageOS 14.1) pour la Galaxy Tab 4 10.1" SM-T530 (milletwifi)
 #
 # À lancer sur une machine Linux avec :
 #   - >= 250 Go d'espace disque libre
@@ -14,7 +14,7 @@
 # Interface : par défaut, affiche une barre de progression TUI (whiptail) et redirige
 # toute la sortie verbeuse (apt, repo sync, brunch, ...) vers un fichier de log — pas de
 # spam dans le terminal. En cas d'échec, les dernières lignes pertinentes du log sont
-# affichées. Désactive la TUI avec NOVATAB_NO_TUI=1 (retombe sur des logs texte classiques,
+# affichées. Désactive la TUI avec FRITEOS_NO_TUI=1 (retombe sur des logs texte classiques,
 # toujours redirigés vers le fichier de log).
 
 set -uo pipefail
@@ -22,18 +22,34 @@ set -uo pipefail
 DEVICE="milletwifi"
 BRANCH="cm-14.1"
 BUILD_TYPE="userdebug"
-WORKDIR="${NOVATAB_WORKDIR:-$HOME/novatab-build}"
-JOBS="${NOVATAB_JOBS:-$(nproc)}"
+WORKDIR="${FRITEOS_WORKDIR:-$HOME/friteos-build}"
+JOBS="${FRITEOS_JOBS:-$(nproc)}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 LOG_DIR="$WORKDIR/logs"
 RUN_LOG="$LOG_DIR/build-$(date +%Y%m%d-%H%M%S).log"
 
-log() { echo -e "\033[1;32m[novatab]\033[0m $*"; }
-err() { echo -e "\033[1;31m[novatab]\033[0m $*" >&2; }
+log() { echo -e "\033[1;32m[friteos]\033[0m $*"; }
+err() { echo -e "\033[1;31m[friteos]\033[0m $*" >&2; }
 
-require_cmd() {
-  command -v "$1" >/dev/null 2>&1 || { err "Commande manquante : $1"; exit 1; }
+# ensure_cmd <commande> <paquet_apt>
+# Installe automatiquement via apt si la commande n'est pas déjà présente.
+ensure_cmd() {
+  local cmd="$1" pkg="${2:-$1}"
+  command -v "$cmd" >/dev/null 2>&1 && return 0
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    err "Commande manquante : $cmd, et apt-get n'est pas disponible pour l'installer automatiquement."
+    exit 1
+  fi
+
+  log "Commande manquante : $cmd — installation via apt (paquet '$pkg')..."
+  if ! sudo apt-get update -qq || ! sudo apt-get install -y "$pkg"; then
+    err "Échec de l'installation de '$pkg'. Installe-le manuellement puis relance."
+    exit 1
+  fi
+
+  command -v "$cmd" >/dev/null 2>&1 || { err "'$cmd' toujours introuvable après l'installation de '$pkg'."; exit 1; }
 }
 
 # ---------------------------------------------------------------------------
@@ -85,16 +101,16 @@ extract_vendor_blobs() {
 
 apply_branding() {
   if [ -n "${SKIP_BRANDING:-}" ]; then
-    echo "SKIP_BRANDING défini, branding NovaTab OS (overlay SetupWizard) non appliqué."
+    echo "SKIP_BRANDING défini, branding FriteOS (overlay SetupWizard) non appliqué."
     return
   fi
 
-  mkdir -p "vendor/novatab"
-  cp -r "$REPO_ROOT/overlay" "vendor/novatab/overlay"
-  cp "$REPO_ROOT/vendor/novatab/vendor.mk" "vendor/novatab/vendor.mk"
+  mkdir -p "vendor/frite"
+  cp -r "$REPO_ROOT/overlay" "vendor/frite/overlay"
+  cp "$REPO_ROOT/vendor/frite/vendor.mk" "vendor/frite/vendor.mk"
 
   local device_mk="device/samsung/milletwifi/device.mk"
-  local inherit_line='$(call inherit-product, vendor/novatab/vendor.mk)'
+  local inherit_line='$(call inherit-product, vendor/frite/vendor.mk)'
 
   if [ ! -f "$device_mk" ]; then
     echo "device.mk introuvable ($device_mk) — le device tree milletwifi a peut-être une structure différente."
@@ -103,10 +119,10 @@ apply_branding() {
   fi
 
   if grep -qF "$inherit_line" "$device_mk"; then
-    echo "vendor/novatab/vendor.mk déjà inclus dans $device_mk."
+    echo "vendor/frite/vendor.mk déjà inclus dans $device_mk."
   else
     echo "" >> "$device_mk"
-    echo "# NovaTab OS branding (ajouté par scripts/build.sh)" >> "$device_mk"
+    echo "# FriteOS branding (ajouté par scripts/build.sh)" >> "$device_mk"
     echo "$inherit_line" >> "$device_mk"
     echo "Ligne d'inclusion ajoutée à $device_mk."
   fi
@@ -129,7 +145,7 @@ HEARTBEAT_PID=""
 USE_TUI=1
 
 [ -t 1 ] || USE_TUI=0
-[ -n "${NOVATAB_NO_TUI:-}" ] && USE_TUI=0
+[ -n "${FRITEOS_NO_TUI:-}" ] && USE_TUI=0
 
 gauge_update() {
   # $1 = pourcentage, $2 = message
@@ -201,19 +217,20 @@ run_long_step() {
 }
 
 main() {
-  require_cmd curl
-  require_cmd git
+  ensure_cmd curl curl
+  ensure_cmd git git-core
 
   mkdir -p "$LOG_DIR"
   log "Log complet de ce build : $RUN_LOG"
 
   if [ "$USE_TUI" -eq 1 ] && ! command -v whiptail >/dev/null 2>&1; then
     log "whiptail absent, installation rapide pour la barre de progression..."
-    sudo apt-get install -y whiptail >>"$RUN_LOG" 2>&1 || USE_TUI=0
+    # Non bloquant : si whiptail ne peut pas être installé, on retombe simplement en mode texte.
+    { sudo apt-get update -qq && sudo apt-get install -y whiptail; } >>"$RUN_LOG" 2>&1 || USE_TUI=0
   fi
 
   if [ "$USE_TUI" -eq 1 ]; then
-    exec {GAUGE_FD}> >(whiptail --title "NovaTab OS — build ($DEVICE)" \
+    exec {GAUGE_FD}> >(whiptail --title "FriteOS — build ($DEVICE)" \
       --gauge "Initialisation..." 10 74 0)
   fi
 
@@ -221,7 +238,7 @@ main() {
   run_step       10  "Installation de l'outil 'repo'..."              install_repo_tool
   run_long_step  15  "Sync des sources LineageOS (repo sync)..."      sync_sources
   run_step       65  "Vérification des blobs vendor..."               extract_vendor_blobs
-  run_step       70  "Application du branding NovaTab OS..."          apply_branding
+  run_step       70  "Application du branding FriteOS..."          apply_branding
   run_long_step  75  "Compilation (breakfast + brunch)..."            build
 
   if [ "$USE_TUI" -eq 1 ]; then

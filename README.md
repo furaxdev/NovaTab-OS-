@@ -1,4 +1,4 @@
-# NovaTab OS
+# FriteOS
 
 ROM custom type LineageOS pour la **Samsung Galaxy Tab 4 10.1" SM-T530** (WiFi, codename `milletwifi`).
 
@@ -33,7 +33,7 @@ manifests/
   roomservice.xml       # pointe vers les device trees / kernel / vendor communautaires
 overlay/
   packages/apps/SetupWizard/...  # branding de l'assistant de premier démarrage (texte, couleurs)
-vendor/novatab/
+vendor/frite/
   vendor.mk              # branche l'overlay + les propriétés de branding dans le build
 scripts/
   build.sh               # repo init + sync + branding + build (à lancer sur une machine avec assez d'espace)
@@ -53,10 +53,10 @@ docs/
 3. Récupère le zip généré dans `out/target/product/milletwifi/lineage-*.zip`.
 
 `build.sh` affiche une barre de progression (whiptail) plutôt que de spammer le terminal —
-toute la sortie verbeuse (apt, repo sync, brunch) va dans `~/novatab-build/logs/build-*.log`,
+toute la sortie verbeuse (apt, repo sync, brunch) va dans `~/friteos-build/logs/build-*.log`,
 et seules les dernières lignes utiles s'affichent en cas d'échec. Pour désactiver la TUI et
 revenir à des logs texte classiques (toujours redirigés vers le même fichier) :
-`NOVATAB_NO_TUI=1 ./scripts/build.sh`.
+`FRITEOS_NO_TUI=1 ./scripts/build.sh`.
 4. Branche la tablette en Download Mode, lance `./scripts/flash.sh` pour flasher un recovery
    custom (TWRP) via Heimdall, puis sideload la ROM via ADB.
 
@@ -80,7 +80,7 @@ logo de boot bas-niveau (avant le kernel) n'est volontairement pas couvert par c
 
 ## Branding du premier démarrage (OOBE)
 
-`scripts/build.sh` applique automatiquement un overlay de branding "NovaTab OS" (texte
+`scripts/build.sh` applique automatiquement un overlay de branding "FriteOS" (texte
 d'accueil, couleurs, nom d'appareil) sur l'assistant de configuration LineageOS lors du build —
 voir [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md#config-personnalisée-au-premier-démarrage-oobe--setupwizard)
 pour le détail et comment vérifier/ajuster les noms de ressources après un `repo sync`.
