@@ -36,8 +36,12 @@ et d'un recovery TWRP déjà compilés par la communauté (à chercher sur XDA p
 # 2. Reboot en recovery (Volume haut + Home + Power), puis :
 
 # 3. (Optionnel) Patch le branding "FriteOS" de l'assistant de premier démarrage
+#    En local :
 ./scripts/patch_setupwizard.sh extract lineage-14.1-....zip SetupWizard.apk
 ./scripts/patch_setupwizard.sh patch SetupWizard.apk SetupWizard-patched.apk
+#    Ou via GitHub Actions (Actions > "Patch SetupWizard" > Run workflow avec l'URL du zip
+#    de la ROM) : tourne sur un runner gratuit standard, télécharge SetupWizard-patched.apk
+#    depuis les artifacts du run une fois terminé.
 
 # 4. Flash la ROM
 ./scripts/flash.sh rom lineage-14.1-....zip
@@ -101,6 +105,7 @@ overlay/
 vendor/frite/
   vendor.mk               # pour build.sh : branche l'overlay dans la compilation
 .github/workflows/
+  patch-setupwizard.yml   # patche le branding OOBE via CI, tourne sur un runner gratuit standard
   build.yml               # CI pour build.sh (nécessite un runner self-hosted)
 docs/
   DEVICE.md               # infos matérielles, sources utilisées, avertissements
