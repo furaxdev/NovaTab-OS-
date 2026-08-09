@@ -51,6 +51,12 @@ docs/
 1. Prépare une machine Linux (Ubuntu 22.04 recommandé) avec ≥250 Go libres et 16 Go de RAM.
 2. `./scripts/build.sh` — installe les dépendances, sync les sources LineageOS + ce manifest, lance le build.
 3. Récupère le zip généré dans `out/target/product/milletwifi/lineage-*.zip`.
+
+`build.sh` affiche une barre de progression (whiptail) plutôt que de spammer le terminal —
+toute la sortie verbeuse (apt, repo sync, brunch) va dans `~/novatab-build/logs/build-*.log`,
+et seules les dernières lignes utiles s'affichent en cas d'échec. Pour désactiver la TUI et
+revenir à des logs texte classiques (toujours redirigés vers le même fichier) :
+`NOVATAB_NO_TUI=1 ./scripts/build.sh`.
 4. Branche la tablette en Download Mode, lance `./scripts/flash.sh` pour flasher un recovery
    custom (TWRP) via Heimdall, puis sideload la ROM via ADB.
 
