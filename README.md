@@ -4,13 +4,11 @@ ROM custom type LineageOS pour la **Samsung Galaxy Tab 4 10.1" SM-T530** (WiFi, 
 
 ## ⚠️ Lis ça avant de commencer
 
-Ce dépôt fournit le **tooling** (manifest, scripts de build, scripts de flash) pour compiler
-et installer une ROM basée sur LineageOS. Il ne contient **pas** de firmware binaire prêt à
-l'emploi : compiler une ROM Android nécessite une vraie source tree AOSP/LineageOS
-(~150-250 Go d'espace disque, plusieurs heures de compilation, une machine Linux dédiée ou
-un runner CI auto-hébergé). Les GitHub Actions "hébergés" gratuits (14 Go de disque, 6h max)
-**ne suffisent pas** pour ce type de build — voir `.github/workflows/build.yml` pour les
-détails et l'option runner self-hosted.
+Ce dépôt fournit le **tooling** (scripts de flash, de patch, de build) pour installer une ROM
+basée sur LineageOS. Il ne contient **pas** de firmware binaire prêt à l'emploi : tu dois soit
+télécharger une ROM déjà compilée par la communauté (recommandé, voir plus bas), soit tout
+recompiler toi-même depuis les sources (~150-250 Go d'espace disque, plusieurs heures — voir
+la section "Avancé").
 
 ### Pourquoi Android 7.1 et pas 8/10 ?
 
@@ -23,83 +21,93 @@ config exacte du Galaxy Tab 4 le plus limité côté support communautaire :
 | LineageOS 15.1 (Android 8.1)       | ⚠️ Support partiel/instable selon les forks, peu maintenu |
 | LineageOS 17.1 (Android 10)        | ❌ Pas de build fonctionnelle connue pour ce SoC/cette RAM — déconseillé |
 
-Ce dépôt cible donc **LineageOS 14.1** par défaut. Tu peux tenter 15.1 en changeant la
-branche du manifest (voir `manifests/roomservice.xml`), à tes risques.
+Cherche donc une build **LineageOS 14.1 non-officielle pour "milletwifi" / "SM-T530"** sur
+XDA-Developers — c'est la cible que tout ce dépôt suppose.
 
-## Structure du dépôt
+## Démarrage rapide — sans rien compiler (recommandé)
 
-```
-manifests/
-  roomservice.xml       # pointe vers les device trees / kernel / vendor communautaires
-overlay/
-  packages/apps/SetupWizard/...  # branding de l'assistant de premier démarrage (texte, couleurs)
-vendor/frite/
-  vendor.mk              # branche l'overlay + les propriétés de branding dans le build
-scripts/
-  build.sh               # repo init + sync + branding + build (à lancer sur une machine avec assez d'espace)
-  flash.sh               # installation via Heimdall (Download Mode) + ADB sideload (ROM/GApps/bootanimation/SetupWizard)
-  make_bootanimation.sh  # génère un bootanimation.zip custom à partir d'images PNG
-  patch_setupwizard.sh   # alternative légère à build.sh : patche le branding OOBE sur une ROM déjà compilée
-.github/workflows/
-  build.yml              # workflow CI (nécessite un runner self-hosted, voir commentaires)
-docs/
-  DEVICE.md              # infos matérielles, sources utilisées, avertissements
-  CUSTOMIZATION.md       # GApps, splash/bootanimation custom, branding du premier démarrage (OOBE)
-```
-
-## Démarrage rapide
-
-1. Prépare une machine Linux (Ubuntu 22.04 recommandé) avec ≥250 Go libres et 16 Go de RAM.
-2. `./scripts/build.sh` — installe les dépendances, sync les sources LineageOS + ce manifest, lance le build.
-3. Récupère le zip généré dans `out/target/product/milletwifi/lineage-*.zip`.
-
-`build.sh` affiche une barre de progression (whiptail) plutôt que de spammer le terminal —
-toute la sortie verbeuse (apt, repo sync, brunch) va dans `~/friteos-build/logs/build-*.log`,
-et seules les dernières lignes utiles s'affichent en cas d'échec. Pour désactiver la TUI et
-revenir à des logs texte classiques (toujours redirigés vers le même fichier) :
-`FRITEOS_NO_TUI=1 ./scripts/build.sh`.
-4. Branche la tablette en Download Mode, lance `./scripts/flash.sh` pour flasher un recovery
-   custom (TWRP) via Heimdall, puis sideload la ROM via ADB.
-
-**Important : Samsung n'utilise pas Fastboot.** Le SM-T530 se flashe via le protocole Odin
-(Download Mode), donc `flash.sh` utilise **Heimdall** (l'implémentation libre d'Odin sous
-Linux/Mac) pour le recovery, puis `adb sideload` pour la ROM elle-même. Voir `docs/DEVICE.md`.
-
-## GApps & splash custom
-
-Support pour flasher **GApps** (Google Apps) juste après la ROM, et personnaliser le
-**bootanimation** (écran d'animation au démarrage du système) — voir
-[`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md) pour le détail complet, y compris pourquoi le
-logo de boot bas-niveau (avant le kernel) n'est volontairement pas couvert par ce dépôt
-(risque de brick, format non confirmé pour ce device).
+Aucune des étapes ci-dessous n'a besoin des 250 Go ni de machine dédiée : tu pars d'une ROM
+et d'un recovery TWRP déjà compilés par la communauté (à chercher sur XDA pour "milletwifi").
 
 ```
-./scripts/flash.sh gapps open_gapps-arm-7.1-pico.zip     # juste après la ROM, dans TWRP
+# 1. Flash TWRP (Download Mode : Volume bas + Home + Power, puis Volume haut pour confirmer)
+./scripts/flash.sh recovery twrp-milletwifi.img
+
+# 2. Reboot en recovery (Volume haut + Home + Power), puis :
+
+# 3. (Optionnel) Patch le branding "FriteOS" de l'assistant de premier démarrage
+./scripts/patch_setupwizard.sh extract lineage-14.1-....zip SetupWizard.apk
+./scripts/patch_setupwizard.sh patch SetupWizard.apk SetupWizard-patched.apk
+
+# 4. Flash la ROM
+./scripts/flash.sh rom lineage-14.1-....zip
+
+# 5. (Si étape 3 faite) Installe le SetupWizard patché, toujours avant le premier boot
+./scripts/flash.sh setupwizard SetupWizard-patched.apk
+
+# 6. GApps, juste après, toujours dans TWRP, sans reboot entre les deux
+./scripts/flash.sh gapps open_gapps-arm-7.1-pico.zip
+
+# 7. Wipe data/cache dans TWRP, puis reboot système
+
+# 8. Une fois démarré : bootanimation custom (nécessite root ou adb root)
 ./scripts/make_bootanimation.sh frames/ bootanimation.zip 1280 800 24
 ./scripts/flash.sh bootanimation bootanimation.zip
 ```
 
-## Branding du premier démarrage (OOBE)
-
-Deux façons d'appliquer le branding "FriteOS" à l'assistant de configuration LineageOS :
-
-- **En compilant depuis les sources** (`scripts/build.sh`) : overlay appliqué automatiquement
-  au build, désactivable avec `SKIP_BRANDING=1 ./scripts/build.sh`
-- **Sur une ROM déjà compilée** (téléchargée, sans recompiler) : `scripts/patch_setupwizard.sh`
-  décompile/patche/resigne juste l'APK SetupWizard avec `apktool` — pas besoin des 250 Go, mais
-  vraie contrepartie (resignature, risque sur les permissions signature-level)
-
-Voir [`docs/CUSTOMIZATION.md`](docs/CUSTOMIZATION.md#config-personnalisée-au-premier-démarrage-oobe--setupwizard)
-pour le détail complet des deux méthodes et leurs limites.
+**Important : Samsung n'utilise pas Fastboot.** Le SM-T530 se flashe via le protocole Odin
+(Download Mode), donc `flash.sh` utilise **Heimdall** (l'implémentation libre d'Odin) pour le
+recovery, puis `adb sideload`/`adb push` pour le reste. `heimdall`, `adb`, `apktool` et les
+autres dépendances s'installent automatiquement via `apt` s'ils manquent. Voir `docs/DEVICE.md`
+pour le détail matériel et `docs/CUSTOMIZATION.md` pour GApps/splash/OOBE en détail (variantes
+GApps à privilégier vu la RAM limitée, risques de la resignature APK, etc.).
 
 ## Sauvegarde tes données avant tout flash
 
 Un flash mal fait peut briquer la tablette (soft-brick récupérable dans la majorité des cas,
-mais reste un risque). Sauvegarde tes données, vérifie que la batterie est chargée à >50%,
-et ne débranche jamais l'appareil pendant un flash.
+mais reste un risque). Sauvegarde tes données (`./scripts/flash.sh backup`), vérifie que la
+batterie est chargée à >50%, et ne débranche jamais l'appareil pendant un flash.
+
+## Avancé : compiler depuis les sources
+
+Seulement si tu veux vraiment builder la ROM toi-même plutôt que d'en flasher une déjà
+compilée (recompiler ne débloque rien de plus que ce que fait déjà `patch_setupwizard.sh` pour
+le branding — c'est juste plus lourd).
+
+1. Machine Linux (Ubuntu 22.04 recommandé) avec ≥250 Go libres et 16 Go de RAM.
+2. `./scripts/build.sh` — installe les dépendances, sync les sources LineageOS + ce manifest,
+   applique le branding, lance le build. Affiche une barre de progression (whiptail) plutôt que
+   de spammer le terminal — toute la sortie verbeuse va dans `~/friteos-build/logs/build-*.log`.
+   Désactivable avec `FRITEOS_NO_TUI=1 ./scripts/build.sh`.
+3. Récupère le zip dans `out/target/product/milletwifi/lineage-*.zip`, puis reprends la séquence
+   `flash.sh` ci-dessus à partir de l'étape 4.
+
+Ça ne tourne **pas** sur les runners GitHub Actions hébergés gratuits (14 Go de disque max) —
+voir `.github/workflows/build.yml` pour l'option runner self-hosted (qui a besoin des mêmes
+250 Go, GitHub Actions n'y change rien).
+
+## Structure du dépôt
+
+```
+scripts/
+  flash.sh               # Heimdall (Download Mode) + ADB : recovery/ROM/GApps/bootanimation/SetupWizard
+  patch_setupwizard.sh   # patche le branding OOBE sur une ROM déjà compilée (sans recompiler)
+  make_bootanimation.sh  # génère un bootanimation.zip custom à partir d'images PNG
+  build.sh               # (avancé) repo init + sync + branding + build complet
+manifests/
+  roomservice.xml         # pour build.sh : device trees / kernel / vendor communautaires
+overlay/
+  packages/apps/SetupWizard/...  # branding OOBE (texte, couleurs), utilisé par build.sh et patch_setupwizard.sh
+vendor/frite/
+  vendor.mk               # pour build.sh : branche l'overlay dans la compilation
+.github/workflows/
+  build.yml               # CI pour build.sh (nécessite un runner self-hosted)
+docs/
+  DEVICE.md               # infos matérielles, sources utilisées, avertissements
+  CUSTOMIZATION.md         # GApps, splash/bootanimation, branding OOBE (les deux méthodes)
+```
 
 ## Statut du projet
 
-Scaffold initial : manifest + scripts de build/flash + workflow CI documenté. Prochaine étape :
-valider que les device trees communautaires référencés dans `manifests/roomservice.xml`
-sont toujours actifs avant de lancer un premier build réel.
+Scaffold initial : scripts de flash/patch/build documentés. Prochaine étape : valider le tout
+sur une tablette réelle avec une build LineageOS 14.1 milletwifi trouvée sur XDA.
