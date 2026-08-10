@@ -19,7 +19,9 @@
 #
 # Usage :
 #   ./patch_setupwizard.sh extract <rom.zip> [sortie.apk]
-#       Extrait SetupWizard.apk d'un zip de ROM déjà compilée (LineageOS 14.1).
+#       Extrait SetupWizard.apk d'un zip de ROM déjà compilée (LineageOS 14.1). Extrait aussi
+#       au passage les framework-res (AOSP + CM/LineageOS platform) si trouvés, pour que
+#       `patch` puisse résoudre les attributs de ressources spécifiques à LineageOS.
 #
 #   ./patch_setupwizard.sh patch <SetupWizard.apk> [sortie-patched.apk]
 #       Décompile l'APK, applique le branding de overlay/, recompile et signe.
@@ -36,6 +38,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KEYSTORE="$HOME/.friteos-debug.keystore"
 KEYSTORE_ALIAS="friteosdebug"
 KEYSTORE_PASS="friteos-debug"
+
+# Le paquet apt "apktool" (Debian/Ubuntu) est repackagé sans ses binaires aapt/aapt2
+# embarqués (contraintes de licence) et retombe sur l'aapt système, souvent bien trop
+# récent/incompatible avec les APK Android 7.1 — d'où l'usage du jar officiel à la place.
+APKTOOL_VERSION="2.9.3"
+APKTOOL_JAR="$HOME/.cache/friteos/apktool.jar"
 
 log() { echo -e "\033[1;32m[friteos-patch]\033[0m $*"; }
 err() { echo -e "\033[1;31m[friteos-patch]\033[0m $*" >&2; }
@@ -57,6 +65,27 @@ ensure_cmd() {
   fi
 
   command -v "$cmd" >/dev/null 2>&1 || { err "'$cmd' toujours introuvable après l'installation de '$pkg'."; exit 1; }
+}
+
+# ensure_apktool_jar — télécharge le jar officiel d'apktool (pas le paquet apt cassé).
+ensure_apktool_jar() {
+  [ -f "$APKTOOL_JAR" ] && return 0
+  ensure_cmd java default-jdk
+  ensure_cmd curl curl
+
+  mkdir -p "$(dirname "$APKTOOL_JAR")"
+  log "Téléchargement d'apktool $APKTOOL_VERSION (jar officiel, pas le paquet apt)..."
+  local url="https://github.com/iBotPeaches/Apktool/releases/download/v${APKTOOL_VERSION}/apktool_${APKTOOL_VERSION}.jar"
+  if ! curl -fL --retry 3 -o "$APKTOOL_JAR" "$url"; then
+    rm -f "$APKTOOL_JAR"
+    err "Échec du téléchargement d'apktool depuis $url"
+    exit 1
+  fi
+}
+
+apktool() {
+  ensure_apktool_jar
+  java -jar "$APKTOOL_JAR" "$@"
 }
 
 usage() {
@@ -114,10 +143,26 @@ print(f"system.img reconstruit : {total_blocks * BLOCK_SIZE} octets")
 PYEOF
 }
 
+# e2cp_safe <system.img> <chemin interne> <sortie>
+# e2cp d'e2tools ne renvoie PAS un code de sortie fiable quand le fichier n'existe pas
+# (il imprime juste "not found" et sort en 0) — on vérifie donc la présence réelle du
+# fichier extrait plutôt que son exit code.
+e2cp_safe() {
+  local img="$1" internal_path="$2" out="$3"
+  rm -f "$out"
+  e2cp "$img:$internal_path" "$out" >/dev/null 2>&1
+  [ -s "$out" ]
+}
+
 cmd_extract() {
   local rom_zip="$1" out_apk="${2:-SetupWizard.apk}"
   ensure_cmd unzip unzip
   [ -f "$rom_zip" ] || { err "Fichier introuvable : $rom_zip"; exit 1; }
+
+  local out_dir
+  out_dir="$(cd "$(dirname "$out_apk")" && pwd)"
+  local fw_out="$out_dir/framework-res.apk"
+  local cm_fw_out="$out_dir/cm-platform-res.apk"
 
   local internal_path
   internal_path="$(unzip -Z1 "$rom_zip" | grep -iE 'setupwizard.*\.apk$' | head -n1)"
@@ -126,6 +171,14 @@ cmd_extract() {
     log "Trouvé : $internal_path"
     unzip -p "$rom_zip" "$internal_path" > "$out_apk"
     log "Extrait vers $out_apk"
+
+    # Best-effort : si la ROM contient aussi des fichiers system/ à plat, tente de récupérer
+    # les framework-res pour patch (pas grave si absent, patch s'en passera si pas nécessaire).
+    local fw_path cm_fw_path
+    fw_path="$(unzip -Z1 "$rom_zip" | grep -E '(^|/)framework-res\.apk$' | head -n1)"
+    cm_fw_path="$(unzip -Z1 "$rom_zip" | grep -E '(^|/)(org\.(cyanogenmod|lineageos)\.platform-res)\.apk$' | head -n1)"
+    [ -n "$fw_path" ] && unzip -p "$rom_zip" "$fw_path" > "$fw_out" 2>/dev/null
+    [ -n "$cm_fw_path" ] && unzip -p "$rom_zip" "$cm_fw_path" > "$cm_fw_out" 2>/dev/null
     return
   fi
 
@@ -135,29 +188,40 @@ cmd_extract() {
     exit 1
   fi
 
-  log "Zip au format \"block-based\" (system.new.dat.br) — reconstruction automatique de system.img..."
-  ensure_cmd brotli brotli
+  log "Zip au format \"block-based\" (system.new.dat[.br]) — reconstruction automatique de system.img..."
   ensure_cmd e2cp e2tools
 
   local workdir
   workdir="$(mktemp -d)"
-  trap 'rm -rf "$workdir"' EXIT
+  trap "rm -rf '$workdir'" EXIT
 
-  local transfer_list_path new_dat_br_path
+  local transfer_list_path new_dat_path compressed=0
   transfer_list_path="$(unzip -Z1 "$rom_zip" | grep -E 'system\.transfer\.list$' | head -n1)"
-  new_dat_br_path="$(unzip -Z1 "$rom_zip" | grep -E 'system\.new\.dat\.br$' | head -n1)"
+  new_dat_path="$(unzip -Z1 "$rom_zip" | grep -E 'system\.new\.dat\.br$' | head -n1)"
+  if [ -n "$new_dat_path" ]; then
+    compressed=1
+  else
+    # Certaines ROM plus anciennes n'ont pas de compression brotli : system.new.dat brut.
+    new_dat_path="$(unzip -Z1 "$rom_zip" | grep -E 'system\.new\.dat$' | head -n1)"
+  fi
 
-  if [ -z "$transfer_list_path" ] || [ -z "$new_dat_br_path" ]; then
-    err "system.transfer.list ou system.new.dat.br introuvable dans le zip malgré la détection block-based."
+  if [ -z "$transfer_list_path" ] || [ -z "$new_dat_path" ]; then
+    err "system.transfer.list ou system.new.dat[.br] introuvable dans le zip malgré la détection block-based."
     err "Regarde 'unzip -l $rom_zip' pour investiguer la structure exacte."
     exit 1
   fi
 
   unzip -p "$rom_zip" "$transfer_list_path" > "$workdir/system.transfer.list"
-  unzip -p "$rom_zip" "$new_dat_br_path" > "$workdir/system.new.dat.br"
 
-  log "Décompression brotli..."
-  brotli -d "$workdir/system.new.dat.br" -o "$workdir/system.new.dat"
+  if [ "$compressed" -eq 1 ]; then
+    ensure_cmd brotli brotli
+    unzip -p "$rom_zip" "$new_dat_path" > "$workdir/system.new.dat.br"
+    log "Décompression brotli..."
+    brotli -d "$workdir/system.new.dat.br" -o "$workdir/system.new.dat"
+  else
+    log "system.new.dat non compressé, extraction directe..."
+    unzip -p "$rom_zip" "$new_dat_path" > "$workdir/system.new.dat"
+  fi
 
   log "Reconstruction de system.img (peut prendre une minute)..."
   sdat2img_reconstruct "$workdir/system.transfer.list" "$workdir/system.new.dat" "$workdir/system.img"
@@ -165,11 +229,11 @@ cmd_extract() {
   log "Recherche de SetupWizard.apk dans system.img (via e2tools, sans mount)..."
   local candidate found=""
   for candidate in \
-    "priv-app/SetupWizard/SetupWizard.apk" \
-    "app/SetupWizard/SetupWizard.apk" \
     "priv-app/LineageSetupWizard/LineageSetupWizard.apk" \
-    "app/LineageSetupWizard/LineageSetupWizard.apk"; do
-    if e2cp "$workdir/system.img:$candidate" "$out_apk" 2>/dev/null; then
+    "app/LineageSetupWizard/LineageSetupWizard.apk" \
+    "priv-app/SetupWizard/SetupWizard.apk" \
+    "app/SetupWizard/SetupWizard.apk"; do
+    if e2cp_safe "$workdir/system.img" "$candidate" "$out_apk"; then
       found="$candidate"
       break
     fi
@@ -184,6 +248,11 @@ cmd_extract() {
 
   log "Trouvé : system/$found"
   log "Extrait vers $out_apk"
+
+  # Best-effort, comme pour le cas "zip à plat" ci-dessus.
+  e2cp_safe "$workdir/system.img" "framework/framework-res.apk" "$fw_out" || true
+  e2cp_safe "$workdir/system.img" "framework/org.cyanogenmod.platform-res.apk" "$cm_fw_out" \
+    || e2cp_safe "$workdir/system.img" "framework/org.lineageos.platform-res.apk" "$cm_fw_out" || true
 }
 
 cmd_pull() {
@@ -264,12 +333,24 @@ cmd_patch() {
   local apk_in="$1" apk_out="${2:-${1%.apk}-patched.apk}"
   [ -f "$apk_in" ] || { err "Fichier introuvable : $apk_in"; exit 1; }
 
-  ensure_cmd apktool apktool
   ensure_cmd jarsigner default-jdk
 
   local workdir
   workdir="$(mktemp -d)"
-  trap 'rm -rf "$workdir"' EXIT
+  trap "rm -rf '$workdir'" EXIT
+
+  # Si extract a trouvé des framework-res à côté de l'APK, on les enregistre auprès
+  # d'apktool — nécessaire pour résoudre les attributs/ressources spécifiques à
+  # LineageOS/CM (ex: android:allowViaWhitelist), sinon la recompilation échoue.
+  local apk_dir
+  apk_dir="$(cd "$(dirname "$apk_in")" && pwd)"
+  for fw in "$apk_dir/framework-res.apk" "$apk_dir/cm-platform-res.apk"; do
+    if [ -f "$fw" ]; then
+      log "Enregistrement du framework $(basename "$fw") auprès d'apktool..."
+      apktool if "$fw" > "$workdir/apktool-if-$(basename "$fw").log" 2>&1 \
+        || log "(échec non bloquant, voir $workdir/apktool-if-$(basename "$fw").log)"
+    fi
+  done
 
   log "Décompilation de $apk_in..."
   if ! apktool d -f -o "$workdir/decompiled" "$apk_in" > "$workdir/apktool-decode.log" 2>&1; then
@@ -284,14 +365,23 @@ cmd_patch() {
   if ! apktool b -o "$workdir/rebuilt.apk" "$workdir/decompiled" > "$workdir/apktool-build.log" 2>&1; then
     err "Échec de la recompilation. Log :"
     tail -n 30 "$workdir/apktool-build.log" >&2
+    if grep -q "attribute.*not found\|resource identifier found" "$workdir/apktool-build.log"; then
+      err ""
+      err "Cause probable : cet APK référence des attributs spécifiques à un framework OEM/LineageOS"
+      err "(ex: org.cyanogenmod.platform-res.apk ou org.lineageos.platform-res.apk) qui n'a pas été"
+      err "trouvé/enregistré. Si extract n'a pas pu le récupérer automatiquement, place-le manuellement"
+      err "à côté de $apk_in sous le nom cm-platform-res.apk et relance."
+    fi
     exit 1
   fi
 
   ensure_keystore
 
+  # SHA1withRSA est désactivé par défaut sur les JDK récents (jarsigner traiterait l'APK
+  # comme non signé) — SHA-256 est le standard actuel, largement supporté depuis Android 4.3.
   log "Signature avec la clé de debug FriteOS (voir l'avertissement en tête de ce script)..."
   cp "$workdir/rebuilt.apk" "$apk_out"
-  if ! jarsigner -sigalg SHA1withRSA -digestalg SHA1 \
+  if ! jarsigner -sigalg SHA256withRSA -digestalg SHA-256 \
       -keystore "$KEYSTORE" -storepass "$KEYSTORE_PASS" \
       "$apk_out" "$KEYSTORE_ALIAS" > "$workdir/jarsigner.log" 2>&1; then
     err "Échec de la signature. Log :"
