@@ -14,9 +14,20 @@
 
 set -uo pipefail
 
-log() { echo "[$(printf '%3d' "$1")%] $2"; }
-err() { echo "ERREUR : $*" >&2; }
-info() { echo "        $*"; }
+if [ -t 1 ]; then
+  C_STEP='\033[1;36m'   # cyan gras : pourcentage/étape
+  C_INFO='\033[0;90m'   # gris : info secondaire
+  C_WAIT='\033[1;33m'   # jaune : en attente de la tablette
+  C_OK='\033[1;32m'     # vert : détecté / succès
+  C_ERR='\033[1;31m'    # rouge : erreur
+  C_RESET='\033[0m'
+else
+  C_STEP='' C_INFO='' C_WAIT='' C_OK='' C_ERR='' C_RESET=''
+fi
+
+log() { printf "${C_STEP}[%3d%%]${C_RESET} %s\n" "$1" "$2"; }
+err() { printf "${C_ERR}ERREUR :${C_RESET} %s\n" "$*" >&2; }
+info() { printf "${C_INFO}        %s${C_RESET}\n" "$*"; }
 
 # ensure_cmd <commande> <paquet_apt>
 ensure_cmd() {
@@ -52,11 +63,11 @@ EOF
 wait_for_heimdall() {
   local n=0
   while ! heimdall detect >/dev/null 2>&1; do
-    printf '\r        En attente... (%ds, Ctrl+C pour annuler)' "$n"
+    printf "\r${C_WAIT}        En attente... (%ds, Ctrl+C pour annuler)${C_RESET}" "$n"
     sleep 1
     n=$((n + 1))
   done
-  printf '\r        Tablette détectée en Download Mode.            \n'
+  printf "\r${C_OK}        Tablette détectée en Download Mode.            ${C_RESET}\n"
 }
 
 # wait_for_adb_state <motif> <message d'attente>
@@ -64,11 +75,11 @@ wait_for_heimdall() {
 wait_for_adb_state() {
   local pattern="$1" n=0
   while ! adb devices | tail -n +2 | grep -qE "$pattern"; do
-    printf '\r        En attente... (%ds, Ctrl+C pour annuler)' "$n"
+    printf "\r${C_WAIT}        En attente... (%ds, Ctrl+C pour annuler)${C_RESET}" "$n"
     sleep 1
     n=$((n + 1))
   done
-  printf '\r        Tablette détectée.                              \n'
+  printf "\r${C_OK}        Tablette détectée.                              ${C_RESET}\n"
 }
 
 fail_step() {
