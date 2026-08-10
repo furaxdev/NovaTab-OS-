@@ -29,6 +29,25 @@ XDA-Developers — c'est la cible que tout ce dépôt suppose.
 Aucune des étapes ci-dessous n'a besoin des 250 Go ni de machine dédiée : tu pars d'une ROM
 et d'un recovery TWRP déjà compilés par la communauté (à chercher sur XDA pour "matissewifi").
 
+### Tout en une commande
+
+`scripts/install.sh` enchaîne recovery + ROM + SetupWizard patché (optionnel) + GApps
+(optionnel) automatiquement — sortie texte simple (étapes + pourcentage, pas de TUI), et
+il attend tout seul que la tablette soit connectée dans le bon mode à chaque étape plutôt
+que de te demander d'appuyer sur Entrée à l'aveugle. Tu n'as qu'à faire les actions
+physiques demandées à l'écran (bouton, menu TWRP) :
+
+```
+./scripts/install.sh twrp-matissewifi.img lineage-14.1-....zip SetupWizard-patched.apk open_gapps-arm-7.1-pico.zip
+```
+
+(Les deux derniers arguments sont optionnels — `SetupWizard-patched.apk` s'obtient via
+`patch_setupwizard.sh` ou le workflow GitHub Actions, voir plus bas.)
+
+### Étape par étape, avec `flash.sh`
+
+Si tu préfères garder la main à chaque étape :
+
 ```
 # 1. Flash TWRP (Download Mode : Volume bas + Home + Power, puis Volume haut pour confirmer)
 ./scripts/flash.sh recovery twrp-matissewifi.img
@@ -94,10 +113,11 @@ voir `.github/workflows/build.yml` pour l'option runner self-hosted (qui a besoi
 
 ```
 scripts/
-  flash.sh               # Heimdall (Download Mode) + ADB : recovery/ROM/GApps/bootanimation/SetupWizard
-  patch_setupwizard.sh   # patche le branding OOBE sur une ROM déjà compilée (sans recompiler)
-  make_bootanimation.sh  # génère un bootanimation.zip custom à partir d'images PNG
-  build.sh               # (avancé) repo init + sync + branding + build complet
+  install.sh              # tout en une commande : recovery + ROM + SetupWizard + GApps, texte pur, attente auto
+  flash.sh                # Heimdall (Download Mode) + ADB : recovery/ROM/GApps/bootanimation/SetupWizard
+  patch_setupwizard.sh    # patche le branding OOBE sur une ROM déjà compilée (sans recompiler)
+  make_bootanimation.sh   # génère un bootanimation.zip custom à partir d'images PNG
+  build.sh                # (avancé) repo init + sync + branding + build complet
 manifests/
   roomservice.xml         # pour build.sh : device trees / kernel / vendor communautaires
 overlay/
