@@ -313,6 +313,17 @@ def merge_resource_file(target_path, overlay_path, tag):
 print("Application du branding FriteOS sur les ressources décompilées...")
 merge_resource_file(decompiled / "res/values/strings.xml", overlay_values / "strings.xml", "string")
 merge_resource_file(decompiled / "res/values/colors.xml", overlay_values / "colors.xml", "color")
+
+# Les dossiers values-<locale>/ (ex: values-fr) ont priorité sur values/ par défaut dès que
+# l'appareil est dans cette langue — un overlay qui ne touche QUE values/ est donc invisible
+# sur un appareil non-anglophone si la ROM fournit ses propres traductions. On applique donc
+# le même patch (texte identique, pas de traduction) à toutes les variantes de langue trouvées
+# pour ces deux fichiers, afin que le branding s'affiche quelle que soit la langue système.
+for locale_dir in decompiled.glob("res/values-*"):
+    if not locale_dir.is_dir():
+        continue
+    merge_resource_file(locale_dir / "strings.xml", overlay_values / "strings.xml", "string")
+    merge_resource_file(locale_dir / "colors.xml", overlay_values / "colors.xml", "color")
 PYEOF
 }
 
