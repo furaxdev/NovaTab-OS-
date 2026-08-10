@@ -70,7 +70,8 @@ cmd_list() {
 }
 
 cmd_apply() {
-  local name="$1" zip="$STORE_DIR/$name.zip"
+  local name="$1"
+  local zip="$STORE_DIR/$name.zip"
   [ -f "$zip" ] || { err "Aucune bootanimation enregistrée sous ce nom : $name (voir 'list')"; exit 1; }
 
   ensure_cmd adb android-tools-adb
