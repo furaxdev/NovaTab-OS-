@@ -2,7 +2,7 @@
 #
 # patch_branding.sh — patche le texte/couleurs de SetupWizard.apk DÉJÀ COMPILÉ dans une
 # ROM LineageOS existante (téléchargée, pas buildée depuis les sources), avec le branding
-# FriteOS de overlay/. Alternative légère à scripts/build.sh (pas besoin des ~250 Go / du
+# FritaxOS de overlay/. Alternative légère à scripts/build.sh (pas besoin des ~250 Go / du
 # repo sync complet) — au prix d'un vrai risque décrit ci-dessous.
 #
 # ⚠️ RISQUE À COMPRENDRE AVANT D'UTILISER CE SCRIPT :
@@ -35,18 +35,18 @@
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-KEYSTORE="$HOME/.friteos-debug.keystore"
-KEYSTORE_ALIAS="friteosdebug"
-KEYSTORE_PASS="friteos-debug"
+KEYSTORE="$HOME/.fritaxos-debug.keystore"
+KEYSTORE_ALIAS="fritaxosdebug"
+KEYSTORE_PASS="fritaxos-debug"
 
 # Le paquet apt "apktool" (Debian/Ubuntu) est repackagé sans ses binaires aapt/aapt2
 # embarqués (contraintes de licence) et retombe sur l'aapt système, souvent bien trop
 # récent/incompatible avec les APK Android 7.1 — d'où l'usage du jar officiel à la place.
 APKTOOL_VERSION="2.9.3"
-APKTOOL_JAR="$HOME/.cache/friteos/apktool.jar"
+APKTOOL_JAR="$HOME/.cache/fritaxos/apktool.jar"
 
-log() { echo -e "\033[1;32m[friteos-patch]\033[0m $*"; }
-err() { echo -e "\033[1;31m[friteos-patch]\033[0m $*" >&2; }
+log() { echo -e "\033[1;32m[fritaxos-patch]\033[0m $*"; }
+err() { echo -e "\033[1;31m[fritaxos-patch]\033[0m $*" >&2; }
 
 # ensure_cmd <commande> <paquet_apt>
 ensure_cmd() {
@@ -310,7 +310,7 @@ def merge_resource_file(target_path, overlay_path, tag):
 
     target_tree.write(target_path, encoding="utf-8", xml_declaration=True)
 
-print("Application du branding FriteOS sur les ressources décompilées...")
+print("Application du branding FritaxOS sur les ressources décompilées...")
 merge_resource_file(decompiled / "res/values/strings.xml", overlay_values / "strings.xml", "string")
 merge_resource_file(decompiled / "res/values/colors.xml", overlay_values / "colors.xml", "color")
 
@@ -337,7 +337,7 @@ ensure_keystore() {
     -keystore "$KEYSTORE" -alias "$KEYSTORE_ALIAS" \
     -keyalg RSA -keysize 2048 -validity 10000 \
     -storepass "$KEYSTORE_PASS" -keypass "$KEYSTORE_PASS" \
-    -dname "CN=FriteOS Debug, O=FriteOS, C=FR" >/dev/null
+    -dname "CN=FritaxOS Debug, O=FritaxOS, C=FR" >/dev/null
 }
 
 cmd_patch() {
@@ -390,7 +390,7 @@ cmd_patch() {
 
   # SHA1withRSA est désactivé par défaut sur les JDK récents (jarsigner traiterait l'APK
   # comme non signé) — SHA-256 est le standard actuel, largement supporté depuis Android 4.3.
-  log "Signature avec la clé de debug FriteOS (voir l'avertissement en tête de ce script)..."
+  log "Signature avec la clé de debug FritaxOS (voir l'avertissement en tête de ce script)..."
   cp "$workdir/rebuilt.apk" "$apk_out"
   if ! jarsigner -sigalg SHA256withRSA -digestalg SHA-256 \
       -keystore "$KEYSTORE" -storepass "$KEYSTORE_PASS" \

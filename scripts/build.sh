@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# build.sh — build FriteOS (LineageOS 14.1) pour la Galaxy Tab 4 10.1" SM-T530 (matissewifi)
+# build.sh — build FritaxOS (LineageOS 14.1) pour la Galaxy Tab 4 10.1" SM-T530 (matissewifi)
 #
 # À lancer sur une machine Linux avec :
 #   - >= 250 Go d'espace disque libre
@@ -14,7 +14,7 @@
 # Interface : par défaut, affiche une barre de progression TUI (whiptail) et redirige
 # toute la sortie verbeuse (apt, repo sync, brunch, ...) vers un fichier de log — pas de
 # spam dans le terminal. En cas d'échec, les dernières lignes pertinentes du log sont
-# affichées. Désactive la TUI avec FRITEOS_NO_TUI=1 (retombe sur des logs texte classiques,
+# affichées. Désactive la TUI avec FRITAXOS_NO_TUI=1 (retombe sur des logs texte classiques,
 # toujours redirigés vers le fichier de log).
 
 set -uo pipefail
@@ -22,15 +22,15 @@ set -uo pipefail
 DEVICE="matissewifi"
 BRANCH="cm-14.1"
 BUILD_TYPE="userdebug"
-WORKDIR="${FRITEOS_WORKDIR:-$HOME/friteos-build}"
-JOBS="${FRITEOS_JOBS:-$(nproc)}"
+WORKDIR="${FRITAXOS_WORKDIR:-$HOME/fritaxos-build}"
+JOBS="${FRITAXOS_JOBS:-$(nproc)}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 LOG_DIR="$WORKDIR/logs"
 RUN_LOG="$LOG_DIR/build-$(date +%Y%m%d-%H%M%S).log"
 
-log() { echo -e "\033[1;32m[friteos]\033[0m $*"; }
-err() { echo -e "\033[1;31m[friteos]\033[0m $*" >&2; }
+log() { echo -e "\033[1;32m[fritaxos]\033[0m $*"; }
+err() { echo -e "\033[1;31m[fritaxos]\033[0m $*" >&2; }
 
 # ensure_cmd <commande> <paquet_apt>
 # Installe automatiquement via apt si la commande n'est pas déjà présente.
@@ -101,16 +101,16 @@ extract_vendor_blobs() {
 
 apply_branding() {
   if [ -n "${SKIP_BRANDING:-}" ]; then
-    echo "SKIP_BRANDING défini, branding FriteOS (overlay SetupWizard) non appliqué."
+    echo "SKIP_BRANDING défini, branding FritaxOS (overlay SetupWizard) non appliqué."
     return
   fi
 
-  mkdir -p "vendor/frite"
-  cp -r "$REPO_ROOT/overlay" "vendor/frite/overlay"
-  cp "$REPO_ROOT/vendor/frite/vendor.mk" "vendor/frite/vendor.mk"
+  mkdir -p "vendor/fritax"
+  cp -r "$REPO_ROOT/overlay" "vendor/fritax/overlay"
+  cp "$REPO_ROOT/vendor/fritax/vendor.mk" "vendor/fritax/vendor.mk"
 
   local device_mk="device/samsung/matissewifi/device.mk"
-  local inherit_line='$(call inherit-product, vendor/frite/vendor.mk)'
+  local inherit_line='$(call inherit-product, vendor/fritax/vendor.mk)'
 
   if [ ! -f "$device_mk" ]; then
     echo "device.mk introuvable ($device_mk) — le device tree matissewifi a peut-être une structure différente."
@@ -119,10 +119,10 @@ apply_branding() {
   fi
 
   if grep -qF "$inherit_line" "$device_mk"; then
-    echo "vendor/frite/vendor.mk déjà inclus dans $device_mk."
+    echo "vendor/fritax/vendor.mk déjà inclus dans $device_mk."
   else
     echo "" >> "$device_mk"
-    echo "# FriteOS branding (ajouté par scripts/build.sh)" >> "$device_mk"
+    echo "# FritaxOS branding (ajouté par scripts/build.sh)" >> "$device_mk"
     echo "$inherit_line" >> "$device_mk"
     echo "Ligne d'inclusion ajoutée à $device_mk."
   fi
@@ -145,7 +145,7 @@ HEARTBEAT_PID=""
 USE_TUI=1
 
 [ -t 1 ] || USE_TUI=0
-[ -n "${FRITEOS_NO_TUI:-}" ] && USE_TUI=0
+[ -n "${FRITAXOS_NO_TUI:-}" ] && USE_TUI=0
 
 gauge_update() {
   # $1 = pourcentage, $2 = message
@@ -230,7 +230,7 @@ main() {
   fi
 
   if [ "$USE_TUI" -eq 1 ]; then
-    exec {GAUGE_FD}> >(whiptail --title "FriteOS — build ($DEVICE)" \
+    exec {GAUGE_FD}> >(whiptail --title "FritaxOS — build ($DEVICE)" \
       --gauge "Initialisation..." 10 74 0)
   fi
 
@@ -238,7 +238,7 @@ main() {
   run_step       10  "Installation de l'outil 'repo'..."              install_repo_tool
   run_long_step  15  "Sync des sources LineageOS (repo sync)..."      sync_sources
   run_step       65  "Vérification des blobs vendor..."               extract_vendor_blobs
-  run_step       70  "Application du branding FriteOS..."          apply_branding
+  run_step       70  "Application du branding FritaxOS..."          apply_branding
   run_long_step  75  "Compilation (breakfast + brunch)..."            build
 
   if [ "$USE_TUI" -eq 1 ]; then

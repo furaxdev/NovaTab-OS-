@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# flash.sh — installe un recovery custom (TWRP) puis sideload la ROM FriteOS
+# flash.sh — installe un recovery custom (TWRP) puis sideload la ROM FritaxOS
 # sur la Galaxy Tab 4 10.1" SM-T530.
 #
 # ATTENTION : les appareils Samsung n'utilisent PAS Fastboot mais le protocole Odin
@@ -25,8 +25,8 @@
 
 set -euo pipefail
 
-log() { echo -e "\033[1;32m[friteos-flash]\033[0m $*"; }
-err() { echo -e "\033[1;31m[friteos-flash]\033[0m $*" >&2; }
+log() { echo -e "\033[1;32m[fritaxos-flash]\033[0m $*"; }
+err() { echo -e "\033[1;31m[fritaxos-flash]\033[0m $*" >&2; }
 
 # ensure_cmd <commande> <paquet_apt>
 # Installe automatiquement via apt si la commande n'est pas déjà présente.
@@ -145,7 +145,7 @@ push_setupwizard() {
   ensure_cmd adb android-tools-adb
   [ -f "$apk" ] || { err "Fichier introuvable : $apk"; exit 1; }
 
-  log "Remplace l'APK SetupWizard déjà compilé par une version patchée (branding FriteOS)."
+  log "Remplace l'APK SetupWizard déjà compilé par une version patchée (branding FritaxOS)."
   log "Voir scripts/patch_branding.sh pour générer ce fichier, et lire l'avertissement en tête de ce script."
   log "Chemin système ciblé : $remote_path"
   log ""

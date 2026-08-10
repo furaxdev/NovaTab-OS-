@@ -1,4 +1,4 @@
-# FriteOS
+# FritaxOS
 
 ROM custom type LineageOS pour la **Samsung Galaxy Tab 4 10.1" SM-T530** (WiFi, codename `matissewifi`).
 
@@ -54,7 +54,7 @@ Si tu préfères garder la main à chaque étape :
 
 # 2. Reboot en recovery (Volume haut + Home + Power), puis :
 
-# 3. (Optionnel) Patch le branding "FriteOS" de l'assistant de premier démarrage
+# 3. (Optionnel) Patch le branding "FritaxOS" de l'assistant de premier démarrage
 #    En local :
 ./scripts/patch_branding.sh extract lineage-14.1-....zip SetupWizard.apk
 ./scripts/patch_branding.sh patch SetupWizard.apk SetupWizard-patched.apk
@@ -100,8 +100,8 @@ le branding — c'est juste plus lourd).
 1. Machine Linux (Ubuntu 22.04 recommandé) avec ≥250 Go libres et 16 Go de RAM.
 2. `./scripts/build.sh` — installe les dépendances, sync les sources LineageOS + ce manifest,
    applique le branding, lance le build. Affiche une barre de progression (whiptail) plutôt que
-   de spammer le terminal — toute la sortie verbeuse va dans `~/friteos-build/logs/build-*.log`.
-   Désactivable avec `FRITEOS_NO_TUI=1 ./scripts/build.sh`.
+   de spammer le terminal — toute la sortie verbeuse va dans `~/fritaxos-build/logs/build-*.log`.
+   Désactivable avec `FRITAXOS_NO_TUI=1 ./scripts/build.sh`.
 3. Récupère le zip dans `out/target/product/matissewifi/lineage-*.zip`, puis reprends la séquence
    `flash.sh` ci-dessus à partir de l'étape 4.
 
@@ -122,7 +122,7 @@ manifests/
   roomservice.xml         # pour build.sh : device trees / kernel / vendor communautaires
 overlay/
   packages/apps/SetupWizard/...  # branding OOBE (texte, couleurs), utilisé par build.sh et patch_branding.sh
-vendor/frite/
+vendor/fritax/
   vendor.mk               # pour build.sh : branche l'overlay dans la compilation
 .github/workflows/
   patch-branding.yml   # patche le branding OOBE via CI, tourne sur un runner gratuit standard

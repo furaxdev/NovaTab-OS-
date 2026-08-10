@@ -40,7 +40,7 @@ jobs:
       - name: Extraire SetupWizard.apk de la ROM
         run: ./scripts/patch_branding.sh extract rom.zip SetupWizard.apk
 
-      - name: Patcher le branding FriteOS
+      - name: Patcher le branding FritaxOS
         run: ./scripts/patch_branding.sh patch SetupWizard.apk SetupWizard-patched.apk
 
       - name: Upload de l'APK patché

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# install.sh — installe l'essentiel de FriteOS en une seule commande : recovery, ROM,
+# install.sh — installe l'essentiel de FritaxOS en une seule commande : recovery, ROM,
 # SetupWizard patché (optionnel) et GApps (optionnel). Sortie texte pure (pas de TUI) :
 # juste les étapes et un pourcentage. Attend automatiquement que la tablette soit
 # connectée dans le bon mode à chaque étape, au lieu de te demander d'appuyer sur Entrée

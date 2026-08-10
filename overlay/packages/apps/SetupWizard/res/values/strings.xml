@@ -14,6 +14,6 @@
   n'apparaît pas après un flash.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="setup_welcome">Bienvenue sur FriteOS</string>
-    <string name="os_name">FriteOS</string>
+    <string name="setup_welcome">Bienvenue sur FritaxOS</string>
+    <string name="os_name">FritaxOS</string>
 </resources>

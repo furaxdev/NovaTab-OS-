@@ -2,7 +2,7 @@
 #
 # make_bootanimation.sh — génère un bootanimation.zip Android à partir d'images PNG,
 # pour personnaliser l'écran de démarrage (après le splash bas-niveau du kernel, pendant
-# le boot du système) de FriteOS.
+# le boot du système) de FritaxOS.
 #
 # Ça ne remplace PAS le logo de boot bas-niveau (celui affiché avant même le kernel) —
 # voir docs/CUSTOMIZATION.md pour la différence entre les deux et les limites sur le SM-T530.
@@ -18,8 +18,8 @@
 
 set -euo pipefail
 
-log() { echo -e "\033[1;32m[friteos-bootanim]\033[0m $*"; }
-err() { echo -e "\033[1;31m[friteos-bootanim]\033[0m $*" >&2; }
+log() { echo -e "\033[1;32m[fritaxos-bootanim]\033[0m $*"; }
+err() { echo -e "\033[1;31m[fritaxos-bootanim]\033[0m $*" >&2; }
 
 # ensure_cmd <commande> <paquet_apt>
 ensure_cmd() {
