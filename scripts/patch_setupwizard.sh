@@ -69,6 +69,51 @@ EOF
   exit 1
 }
 
+# sdat2img_reconstruct <transfer.list> <system.new.dat> <sortie system.img>
+# Réimplémentation autonome de l'algorithme sdat2img (format block-based d'Android,
+# transfer.list v1-v4) : rejoue uniquement les commandes "new" pour reconstruire les blocs
+# de données réels — "erase"/"zero" sont ignorées car sans contenu de fichier utile ici.
+sdat2img_reconstruct() {
+  local transfer_list="$1" new_dat="$2" out_img="$3"
+  ensure_cmd python3 python3
+
+  python3 - "$transfer_list" "$new_dat" "$out_img" <<'PYEOF'
+import sys
+
+transfer_list, new_dat, out_img = sys.argv[1], sys.argv[2], sys.argv[3]
+BLOCK_SIZE = 4096
+
+with open(transfer_list) as f:
+    lines = [l.strip() for l in f if l.strip()]
+
+version = int(lines[0])
+total_blocks = int(lines[1])
+cmd_start = 4 if version >= 2 else 2  # v2+ a 2 lignes de stash-count à ignorer
+commands = lines[cmd_start:]
+
+with open(out_img, "wb") as out:
+    out.truncate(total_blocks * BLOCK_SIZE)
+
+    with open(new_dat, "rb") as dat:
+        for line in commands:
+            parts = line.split(" ", 1)
+            if len(parts) != 2 or parts[0] != "new":
+                continue
+            tokens = [int(x) for x in parts[1].split(",")]
+            num_ranges = tokens[0] // 2
+            ranges = tokens[1:]
+            with open(out_img, "r+b") as out2:
+                for i in range(num_ranges):
+                    start, end = ranges[2 * i], ranges[2 * i + 1]
+                    length = end - start
+                    data = dat.read(length * BLOCK_SIZE)
+                    out2.seek(start * BLOCK_SIZE)
+                    out2.write(data)
+
+print(f"system.img reconstruit : {total_blocks * BLOCK_SIZE} octets")
+PYEOF
+}
+
 cmd_extract() {
   local rom_zip="$1" out_apk="${2:-SetupWizard.apk}"
   ensure_cmd unzip unzip
@@ -77,30 +122,67 @@ cmd_extract() {
   local internal_path
   internal_path="$(unzip -Z1 "$rom_zip" | grep -iE 'setupwizard.*\.apk$' | head -n1)"
 
-  if [ -z "$internal_path" ]; then
-    if unzip -Z1 "$rom_zip" | grep -q 'system.new.dat'; then
-      err "Ce zip est au format \"block-based\" (system.new.dat.br) : les fichiers ne sont"
-      err "PAS accessibles directement dans le zip, ce script ne gère pas ce cas automatiquement."
-      err ""
-      err "Pour extraire quand même, il faut reconstruire system.img puis le monter :"
-      err "  1. brotli -d system.new.dat.br -o system.new.dat"
-      err "  2. sdat2img.py system.transfer.list system.new.dat system.img"
-      err "     (script Python communautaire, cherche \"sdat2img\" sur GitHub)"
-      err "  3. Monter system.img (loop mount ou 7z x system.img) et y trouver SetupWizard.apk"
-      err "     (chemin typique : system/priv-app/SetupWizard/SetupWizard.apk)"
-      err ""
-      err "Alternative plus simple : utilise '$0 pull' après avoir flashé et démarré la ROM une"
-      err "première fois (voir docs/CUSTOMIZATION.md — mais dans ce cas le premier écran custom"
-      err "n'apparaîtra qu'après un wipe data, pas au tout premier boot)."
-      exit 1
-    fi
+  if [ -n "$internal_path" ]; then
+    log "Trouvé : $internal_path"
+    unzip -p "$rom_zip" "$internal_path" > "$out_apk"
+    log "Extrait vers $out_apk"
+    return
+  fi
+
+  if ! unzip -Z1 "$rom_zip" | grep -q 'system.new.dat'; then
     err "Aucun SetupWizard*.apk trouvé dans $rom_zip."
     err "Structure de ROM inattendue — regarde 'unzip -l $rom_zip | grep -i setupwizard' pour investiguer."
     exit 1
   fi
 
-  log "Trouvé : $internal_path"
-  unzip -p "$rom_zip" "$internal_path" > "$out_apk"
+  log "Zip au format \"block-based\" (system.new.dat.br) — reconstruction automatique de system.img..."
+  ensure_cmd brotli brotli
+  ensure_cmd e2cp e2tools
+
+  local workdir
+  workdir="$(mktemp -d)"
+  trap 'rm -rf "$workdir"' EXIT
+
+  local transfer_list_path new_dat_br_path
+  transfer_list_path="$(unzip -Z1 "$rom_zip" | grep -E 'system\.transfer\.list$' | head -n1)"
+  new_dat_br_path="$(unzip -Z1 "$rom_zip" | grep -E 'system\.new\.dat\.br$' | head -n1)"
+
+  if [ -z "$transfer_list_path" ] || [ -z "$new_dat_br_path" ]; then
+    err "system.transfer.list ou system.new.dat.br introuvable dans le zip malgré la détection block-based."
+    err "Regarde 'unzip -l $rom_zip' pour investiguer la structure exacte."
+    exit 1
+  fi
+
+  unzip -p "$rom_zip" "$transfer_list_path" > "$workdir/system.transfer.list"
+  unzip -p "$rom_zip" "$new_dat_br_path" > "$workdir/system.new.dat.br"
+
+  log "Décompression brotli..."
+  brotli -d "$workdir/system.new.dat.br" -o "$workdir/system.new.dat"
+
+  log "Reconstruction de system.img (peut prendre une minute)..."
+  sdat2img_reconstruct "$workdir/system.transfer.list" "$workdir/system.new.dat" "$workdir/system.img"
+
+  log "Recherche de SetupWizard.apk dans system.img (via e2tools, sans mount)..."
+  local candidate found=""
+  for candidate in \
+    "priv-app/SetupWizard/SetupWizard.apk" \
+    "app/SetupWizard/SetupWizard.apk" \
+    "priv-app/LineageSetupWizard/LineageSetupWizard.apk" \
+    "app/LineageSetupWizard/LineageSetupWizard.apk"; do
+    if e2cp "$workdir/system.img:$candidate" "$out_apk" 2>/dev/null; then
+      found="$candidate"
+      break
+    fi
+  done
+
+  if [ -z "$found" ]; then
+    err "SetupWizard.apk introuvable aux emplacements habituels dans system.img."
+    err "Cherche manuellement avec : e2ls $workdir/system.img:priv-app/ | grep -i setup"
+    err "(le zip temporaire a été nettoyé — relance la commande pour investiguer si besoin)"
+    exit 1
+  fi
+
+  log "Trouvé : system/$found"
   log "Extrait vers $out_apk"
 }
 
