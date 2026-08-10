@@ -53,7 +53,7 @@ Usage: $0 <twrp.img> <rom.zip> [setupwizard-patched.apk] [gapps.zip]
 
   twrp.img                    Recovery TWRP à flasher (obligatoire)
   rom.zip                     ROM LineageOS à installer (obligatoire)
-  setupwizard-patched.apk     APK SetupWizard patché (optionnel, voir patch_setupwizard.sh)
+  setupwizard-patched.apk     APK SetupWizard patché (optionnel, voir patch_branding.sh)
   gapps.zip                   Package GApps, ex: open_gapps-arm-7.1-pico (optionnel)
 EOF
   exit 1

@@ -55,7 +55,7 @@ Usage:
   $0 rom <fichier_rom.zip>             Sideload la ROM via ADB (tablette doit être dans TWRP)
   $0 gapps <fichier_gapps.zip>         Sideload un package GApps via ADB (juste après la ROM, dans TWRP)
   $0 bootanimation <fichier.zip>       Pousse un bootanimation.zip custom (système déjà démarré + root, ou via TWRP)
-  $0 setupwizard <apk> [chemin]        Remplace SetupWizard par une version patchée (voir patch_setupwizard.sh), AVANT le 1er boot
+  $0 setupwizard <apk> [chemin]        Remplace SetupWizard par une version patchée (voir patch_branding.sh), AVANT le 1er boot
   $0 backup                            Sauvegarde /data via adb avant de flasher (recommandé)
 EOF
   exit 1
@@ -146,7 +146,7 @@ push_setupwizard() {
   [ -f "$apk" ] || { err "Fichier introuvable : $apk"; exit 1; }
 
   log "Remplace l'APK SetupWizard déjà compilé par une version patchée (branding FriteOS)."
-  log "Voir scripts/patch_setupwizard.sh pour générer ce fichier, et lire l'avertissement en tête de ce script."
+  log "Voir scripts/patch_branding.sh pour générer ce fichier, et lire l'avertissement en tête de ce script."
   log "Chemin système ciblé : $remote_path"
   log ""
   log "IMPORTANT : ça ne prend effet proprement qu'AVANT le premier démarrage (depuis TWRP,"

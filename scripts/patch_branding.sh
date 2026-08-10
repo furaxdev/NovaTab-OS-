@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# patch_setupwizard.sh — patche le texte/couleurs de SetupWizard.apk DÉJÀ COMPILÉ dans une
+# patch_branding.sh — patche le texte/couleurs de SetupWizard.apk DÉJÀ COMPILÉ dans une
 # ROM LineageOS existante (téléchargée, pas buildée depuis les sources), avec le branding
 # FriteOS de overlay/. Alternative légère à scripts/build.sh (pas besoin des ~250 Go / du
 # repo sync complet) — au prix d'un vrai risque décrit ci-dessous.
@@ -18,15 +18,15 @@
 # tout remplacement (voir flash.sh setupwizard).
 #
 # Usage :
-#   ./patch_setupwizard.sh extract <rom.zip> [sortie.apk]
+#   ./patch_branding.sh extract <rom.zip> [sortie.apk]
 #       Extrait SetupWizard.apk d'un zip de ROM déjà compilée (LineageOS 14.1). Extrait aussi
 #       au passage les framework-res (AOSP + CM/LineageOS platform) si trouvés, pour que
 #       `patch` puisse résoudre les attributs de ressources spécifiques à LineageOS.
 #
-#   ./patch_setupwizard.sh patch <SetupWizard.apk> [sortie-patched.apk]
+#   ./patch_branding.sh patch <SetupWizard.apk> [sortie-patched.apk]
 #       Décompile l'APK, applique le branding de overlay/, recompile et signe.
 #
-#   ./patch_setupwizard.sh pull [sortie.apk]
+#   ./patch_branding.sh pull [sortie.apk]
 #       Récupère SetupWizard.apk directement depuis une tablette déjà flashée (adb, root).
 #
 # Ensuite, installe le résultat avec :

@@ -105,23 +105,23 @@ assistant (nom, texte d'accueil, couleurs) sans forker l'app entière.
 | Méthode | Besoin de compiler ? | Risque |
 |---|---|---|
 | **`scripts/build.sh`** (overlay au build) | Oui, source tree complète (~250 Go, plusieurs heures) | Aucun risque particulier — mécanisme standard AOSP |
-| **`scripts/patch_setupwizard.sh`** (patch d'un APK déjà compilé) | Non — juste `apktool` + un JDK | Resigne l'APK avec une clé différente de la ROM, peut casser des permissions signature-level (voir plus bas) |
+| **`scripts/patch_branding.sh`** (patch d'un APK déjà compilé) | Non — juste `apktool` + un JDK | Resigne l'APK avec une clé différente de la ROM, peut casser des permissions signature-level (voir plus bas) |
 
 Si tu pars d'une **ROM déjà compilée** (téléchargée depuis XDA par ex.) plutôt que de tout
-recompiler toi-même, utilise `patch_setupwizard.sh` :
+recompiler toi-même, utilise `patch_branding.sh` :
 
 ```
-./scripts/patch_setupwizard.sh extract lineage-14.1-....zip SetupWizard.apk
-./scripts/patch_setupwizard.sh patch SetupWizard.apk SetupWizard-patched.apk
+./scripts/patch_branding.sh extract lineage-14.1-....zip SetupWizard.apk
+./scripts/patch_branding.sh patch SetupWizard.apk SetupWizard-patched.apk
 ./scripts/flash.sh setupwizard SetupWizard-patched.apk
 ```
 
 Si la ROM est déjà flashée et démarrée une première fois (tu n'as pas eu l'occasion de patcher
-avant), tu peux aussi récupérer l'APK installé directement : `./scripts/patch_setupwizard.sh pull`
+avant), tu peux aussi récupérer l'APK installé directement : `./scripts/patch_branding.sh pull`
 — mais dans ce cas l'assistant ne se relance qu'après un `wipe data` (comportement normal
 d'Android, pas une limite de ce script).
 
-**⚠️ Le risque à connaître avant d'utiliser `patch_setupwizard.sh` :** contrairement à l'overlay
+**⚠️ Le risque à connaître avant d'utiliser `patch_branding.sh` :** contrairement à l'overlay
 appliqué au build (qui garde la signature plateforme cohérente sur toute la ROM), ce script
 décompile puis **resigne** l'APK avec une clé de debug générée localement. Si SetupWizard
 partage l'UID système (`android:sharedUserId="android.uid.system"`) ou dépend d'une permission
@@ -132,7 +132,7 @@ sauvegarde TWRP complète**. `flash.sh setupwizard` sauvegarde automatiquement l
 avant de le remplacer, au cas où il faille revenir en arrière.
 
 **Zips au format "block-based" :** beaucoup de zips de ROM modernes utilisent
-`system.new.dat.br` + `system.transfer.list` plutôt que des fichiers à plat — `patch_setupwizard.sh
+`system.new.dat.br` + `system.transfer.list` plutôt que des fichiers à plat — `patch_branding.sh
 extract` détecte ce cas et reconstruit automatiquement `system.img` (décompression brotli +
 rejeu des commandes `new` du transfer.list), puis en extrait l'APK avec `e2tools` (lecture
 directe du système de fichiers ext4, sans mount ni root). `brotli` et `e2tools` s'installent

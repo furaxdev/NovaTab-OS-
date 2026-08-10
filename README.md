@@ -42,7 +42,7 @@ physiques demandées à l'écran (bouton, menu TWRP) :
 ```
 
 (Les deux derniers arguments sont optionnels — `SetupWizard-patched.apk` s'obtient via
-`patch_setupwizard.sh` ou le workflow GitHub Actions, voir plus bas.)
+`patch_branding.sh` ou le workflow GitHub Actions, voir plus bas.)
 
 ### Étape par étape, avec `flash.sh`
 
@@ -56,9 +56,9 @@ Si tu préfères garder la main à chaque étape :
 
 # 3. (Optionnel) Patch le branding "FriteOS" de l'assistant de premier démarrage
 #    En local :
-./scripts/patch_setupwizard.sh extract lineage-14.1-....zip SetupWizard.apk
-./scripts/patch_setupwizard.sh patch SetupWizard.apk SetupWizard-patched.apk
-#    Ou via GitHub Actions (Actions > "Patch SetupWizard" > Run workflow avec l'URL du zip
+./scripts/patch_branding.sh extract lineage-14.1-....zip SetupWizard.apk
+./scripts/patch_branding.sh patch SetupWizard.apk SetupWizard-patched.apk
+#    Ou via GitHub Actions (Actions > "Patch branding" > Run workflow avec l'URL du zip
 #    de la ROM) : tourne sur un runner gratuit standard, télécharge SetupWizard-patched.apk
 #    depuis les artifacts du run une fois terminé.
 
@@ -94,7 +94,7 @@ batterie est chargée à >50%, et ne débranche jamais l'appareil pendant un fla
 ## Avancé : compiler depuis les sources
 
 Seulement si tu veux vraiment builder la ROM toi-même plutôt que d'en flasher une déjà
-compilée (recompiler ne débloque rien de plus que ce que fait déjà `patch_setupwizard.sh` pour
+compilée (recompiler ne débloque rien de plus que ce que fait déjà `patch_branding.sh` pour
 le branding — c'est juste plus lourd).
 
 1. Machine Linux (Ubuntu 22.04 recommandé) avec ≥250 Go libres et 16 Go de RAM.
@@ -115,17 +115,17 @@ voir `.github/workflows/build.yml` pour l'option runner self-hosted (qui a besoi
 scripts/
   install.sh              # tout en une commande : recovery + ROM + SetupWizard + GApps, texte pur, attente auto
   flash.sh                # Heimdall (Download Mode) + ADB : recovery/ROM/GApps/bootanimation/SetupWizard
-  patch_setupwizard.sh    # patche le branding OOBE sur une ROM déjà compilée (sans recompiler)
+  patch_branding.sh    # patche le branding OOBE sur une ROM déjà compilée (sans recompiler)
   make_bootanimation.sh   # génère un bootanimation.zip custom à partir d'images PNG
   build.sh                # (avancé) repo init + sync + branding + build complet
 manifests/
   roomservice.xml         # pour build.sh : device trees / kernel / vendor communautaires
 overlay/
-  packages/apps/SetupWizard/...  # branding OOBE (texte, couleurs), utilisé par build.sh et patch_setupwizard.sh
+  packages/apps/SetupWizard/...  # branding OOBE (texte, couleurs), utilisé par build.sh et patch_branding.sh
 vendor/frite/
   vendor.mk               # pour build.sh : branche l'overlay dans la compilation
 .github/workflows/
-  patch-setupwizard.yml   # patche le branding OOBE via CI, tourne sur un runner gratuit standard
+  patch-branding.yml   # patche le branding OOBE via CI, tourne sur un runner gratuit standard
   build.yml               # CI pour build.sh (nécessite un runner self-hosted)
 docs/
   DEVICE.md               # infos matérielles, sources utilisées, avertissements

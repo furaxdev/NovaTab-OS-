@@ -1,11 +1,11 @@
-name: Patch SetupWizard (branding OOBE, sans compilation)
+name: Patch branding (OOBE, sans compilation)
 
 # Contrairement à build.yml (compilation complète, ~250 Go, besoin d'un runner self-hosted),
 # ce workflow tourne sans problème sur un runner GitHub Actions HÉBERGÉ GRATUIT standard :
 # patcher un seul APK avec apktool ne demande que quelques centaines de Mo et moins d'une
-# minute. C'est le pendant CI du chemin "léger" décrit dans le README (patch_setupwizard.sh).
+# minute. C'est le pendant CI du chemin "léger" décrit dans le README (patch_branding.sh).
 #
-# Usage : Actions > Patch SetupWizard > Run workflow, avec l'URL de téléchargement direct
+# Usage : Actions > Patch branding > Run workflow, avec l'URL de téléchargement direct
 # du zip de la ROM (le lien direct vers le .zip, pas une page web XDA).
 #
 # Le résultat (SetupWizard-patched.apk) est déposé en artifact du run — télécharge-le puis
@@ -35,13 +35,13 @@ jobs:
           ls -la rom.zip
 
       - name: Rendre les scripts exécutables
-        run: chmod +x scripts/patch_setupwizard.sh
+        run: chmod +x scripts/patch_branding.sh
 
       - name: Extraire SetupWizard.apk de la ROM
-        run: ./scripts/patch_setupwizard.sh extract rom.zip SetupWizard.apk
+        run: ./scripts/patch_branding.sh extract rom.zip SetupWizard.apk
 
       - name: Patcher le branding FriteOS
-        run: ./scripts/patch_setupwizard.sh patch SetupWizard.apk SetupWizard-patched.apk
+        run: ./scripts/patch_branding.sh patch SetupWizard.apk SetupWizard-patched.apk
 
       - name: Upload de l'APK patché
         uses: actions/upload-artifact@v4
