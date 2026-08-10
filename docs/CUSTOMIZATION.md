@@ -131,11 +131,12 @@ du texte/couleurs dans la plupart des cas sur Android 7.1, mais **teste d'abord 
 sauvegarde TWRP complète**. `flash.sh setupwizard` sauvegarde automatiquement l'APK original
 avant de le remplacer, au cas où il faille revenir en arrière.
 
-**Autre limite à connaître :** beaucoup de zips de ROM modernes utilisent un format
-"block-based" (`system.new.dat.br` + `system.transfer.list`) plutôt que des fichiers à plat —
-dans ce cas, `patch_setupwizard.sh extract` ne peut pas extraire l'APK directement du zip et
-te l'indique clairement avec la marche à suivre manuelle (reconstruire `system.img` via
-`sdat2img`), ou te suggère d'utiliser `pull` à la place.
+**Zips au format "block-based" :** beaucoup de zips de ROM modernes utilisent
+`system.new.dat.br` + `system.transfer.list` plutôt que des fichiers à plat — `patch_setupwizard.sh
+extract` détecte ce cas et reconstruit automatiquement `system.img` (décompression brotli +
+rejeu des commandes `new` du transfer.list), puis en extrait l'APK avec `e2tools` (lecture
+directe du système de fichiers ext4, sans mount ni root). `brotli` et `e2tools` s'installent
+automatiquement via apt si absents, comme le reste des dépendances.
 
 ### Ce qui n'est PAS couvert (hors scope pour l'instant)
 
