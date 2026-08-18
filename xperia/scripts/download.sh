@@ -108,13 +108,14 @@ download_file "$TWRP_URL" "$TWRP_DEST" "TWRP 3.7.0 kagura"
 
 echo ""
 
-# ─── 3. ROM LineageOS 15.1 — build non-officielle (Bitti09 / XDA) ────────────
-log "ROM LineageOS 15.1 pour kagura (build non-officielle)..."
-ROM_DEST="$OUT_DIR/lineage-15.1-kagura.zip"
-info "Page XDA : https://forum.xda-developers.com/xperia-xz/development"
-info "Cherche 'LineageOS 15 kagura Bitti09' ou 'LineageOS F8331'"
-info "Prends la build la plus récente (.zip) — c'est un sideload TWRP, pas un flashable Odin"
-wait_for_file "$ROM_DEST" "ROM LineageOS 15.1 kagura"
+# ─── 3. ROM LineageOS 15.0 — build non-officielle Bitti09 (AndroidFileHost) ──
+log "ROM LineageOS 15.0 (Android 8) pour kagura (build Bitti09)..."
+ROM_DEST="$OUT_DIR/lineage-15.0-kagura.zip"
+warn "AndroidFileHost n'a pas d'URL directe stable — téléchargement manuel requis."
+info "Va sur : https://androidfilehost.com/?w=profile&uid=9390135922294522798"
+info "Télécharge : lineage-15.0-20171130_203351-UNOFFICIAL-kagura.zip (la plus récente)"
+info "Renomme-le en : $ROM_DEST"
+wait_for_file "$ROM_DEST" "ROM LineageOS 15.0 kagura"
 
 echo ""
 
