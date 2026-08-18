@@ -111,10 +111,14 @@ echo ""
 # ─── 3. ROM LineageOS 15.0 — build non-officielle Bitti09 (AndroidFileHost) ──
 log "ROM LineageOS 15.0 (Android 8) pour kagura (build Bitti09)..."
 ROM_DEST="$OUT_DIR/lineage-15.0-kagura.zip"
-warn "AndroidFileHost n'a pas d'URL directe stable — téléchargement manuel requis."
-info "Va sur : https://androidfilehost.com/?w=profile&uid=9390135922294522798"
-info "Télécharge : lineage-15.0-20171130_203351-UNOFFICIAL-kagura.zip (la plus récente)"
-info "Renomme-le en : $ROM_DEST"
+ROM_URL="https://androidfilehost.com/?fid=673791459329063383"
+warn "AndroidFileHost bloque curl — ouvre la page dans Epiphany pour télécharger :"
+# Lien cliquable ANSI OSC 8 (fonctionne dans GNOME Terminal, Konsole, etc.)
+printf "    \033]8;;%s\033\\\\%s\033]8;;\033\\\\\n" "$ROM_URL" "$ROM_URL"
+read -r -p "    Appuie sur Entrée pour ouvrir dans Epiphany... "
+epiphany "$ROM_URL" &
+warn "Télécharge le zip dans Epiphany, place-le ici et renomme-le en :"
+warn "  $ROM_DEST"
 wait_for_file "$ROM_DEST" "ROM LineageOS 15.0 kagura"
 
 echo ""
