@@ -100,13 +100,11 @@ fi
 
 echo ""
 
-# ─── 2. TWRP pour kagura — lien XDA (pas d'URL stable automatisable) ─────────
-log "TWRP pour kagura (Xperia XZ F8331)..."
-TWRP_DEST="$OUT_DIR/twrp-kagura.img"
-info "Page XDA : https://forum.xda-developers.com/xperia-xz/development"
-info "Cherche 'TWRP kagura' ou 'TWRP F8331' — télécharge le .img (pas le .zip)"
-info "Device tree TWRP (AndroPlus-org) : https://github.com/AndroPlus-org/android_device_sony_kagura"
-wait_for_file "$TWRP_DEST" "TWRP kagura"
+# ─── 2. TWRP pour kagura — téléchargement automatique depuis dl.twrp.me ──────
+log "TWRP 3.7.0 pour kagura (Xperia XZ F8331)..."
+TWRP_DEST="$OUT_DIR/twrp-3.7.0_9-0-kagura.img"
+TWRP_URL="https://dl.twrp.me/kagura/twrp-3.7.0_9-0-kagura.img"
+download_file "$TWRP_URL" "$TWRP_DEST" "TWRP 3.7.0 kagura"
 
 echo ""
 
