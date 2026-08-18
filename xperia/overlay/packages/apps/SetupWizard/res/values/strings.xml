@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Overlay de branding pour l'app SetupWizard de LineageOS 15.1 (Android 8.1).
+
+  ⚠️ LineageOS 15.1 utilise un SetupWizard différent de celui de cm-14.1 (voir
+  ../../../../../overlay/ à la racine, branding FritaxOS pour la Tab 4) — les noms de
+  ressources ci-dessous sont à vérifier après ton premier `repo sync`/extraction de la
+  build, dans :
+    packages/apps/SetupWizard/res/values/strings.xml (ou LineageParts selon la build)
+  Un overlay qui référence une ressource inexistante est simplement ignoré (pas d'erreur
+  bloquante) — c'est la première chose à checker si le texte custom n'apparaît pas.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="setup_welcome">Bienvenue sur FuraxOS</string>
+    <string name="os_name">FuraxOS</string>
+</resources>
